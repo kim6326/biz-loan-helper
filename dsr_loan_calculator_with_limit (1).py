@@ -37,6 +37,9 @@ LTV_MAP = {
 
 st.title("🏦 DSR 담보계산기")
 
+# 내생에 최초 여부 확인
+first_home = st.checkbox("내생에 최초 주택 구입 여부 (생애최초)")
+
 # 1. 연소득 입력
 annual_income = comma_number_input("연소득을 입력하세요", key="annual_income", value="")
 
@@ -50,6 +53,9 @@ else:
 
 # 2-1. 아파트 시세 입력
 apt_price = comma_number_input("아파트 시세 (KB 시세 기준)", key="apt_price")
+# 아파트 시세 입력값 표시
+if apt_price:
+    st.markdown(f"<div style='color:gray; font-size:0.9em;'>입력된 아파트 시세: {apt_price:,} 원</div>", unsafe_allow_html=True)
 
 # 3. 기존 대출 리스트
 st.subheader("기존 대출 내역 추가")
@@ -87,8 +93,12 @@ if st.button("계산하기"):
 
     available_payment = dsr_limit - total_existing_monthly
     st.write(f"여유 상환 가능액: {available_payment:,.0f} 원")
-    ltv_limit = apt_price * ltv_ratio
-    st.write(f"LTV 기준 최대 대출 가능액: {ltv_limit:,.0f} 원")
+    ltv_limit_raw = apt_price * ltv_ratio
+ltv_limit = ltv_limit_raw
+if first_home and ltv_limit > 600_000_000:
+    ltv_limit = 600_000_000  # 생애최초 최대한도 적용
+st.write(f"LTV 기준 최대 대출 가능액: {ltv_limit:,.0f} 원")
+st.write(f"(원래 LTV 한도: {ltv_limit_raw:,.0f} 원)")
 
     new_loan_monthly = calculate_monthly_payment(new_loan_amount, new_loan_rate, new_loan_years)
     st.write(f"신규 대출 월 상환액: {new_loan_monthly:,.0f} 원")
@@ -124,5 +134,8 @@ if st.button("최대 대출 가능 금액 계산"):
         st.error("❌ 현재 조건에서는 추가 대출이 불가능합니다.")
         st.info("기존 대출을 줄이거나 연소득을 높이시면 추가 대출이 가능할 수 있습니다.")
     else:
-        st.success(f"{calc_years}년, 연 {calc_rate}% 기준으로 최대 대출 가능 금액은 {max_loan:,.0f} 원입니다.")
+        st.success(f"📌 최대 대출 가능 금액: {max_loan:,.0f} 원 ({calc_years}년, 연 {calc_rate}% 기준)")
+        st.info(f"💡 LTV 기준 최대 대출 가능액: {ltv_limit:,.0f} 원")
+st.info(f"📊 원래 계산된 LTV 한도: {ltv_limit_raw:,.0f} 원")
+        st.info(f"🏠 아파트 시세: {apt_price:,.0f} 원")
 
