@@ -1,12 +1,19 @@
 import streamlit as st
 import re
 
-# 입력값에 콤마 자동 적용 함수
+# ✅ 페이지 제목 및 아이콘 설정
+st.set_page_config(
+    page_title="DSR 담보계산기",
+    page_icon="🏦",
+    layout="centered"
+)
+
+# 입력값에 콤마 자동 적용 함수 (단위 제거, 자리수만 표시)
 def comma_number_input(label, key, value="0"):
     user_input = st.text_input(label, value=value, key=key)
     digits_only = re.sub(r'[^0-9]', '', user_input)
     formatted = f"{int(digits_only):,}" if digits_only else ""
-    st.markdown(f"**\u2192 {formatted} 원**")
+    st.markdown(f"<div style='color:gray; font-size:0.9em;'>입력값: {formatted}</div>", unsafe_allow_html=True)
     return int(digits_only) if digits_only else 0
 
 # 원리금 균등상환 월 상환액 계산 함수
@@ -28,7 +35,7 @@ LTV_MAP = {
     "기타": 0.60,
 }
 
-st.title("DSR 기반 담보대출 계산기")
+st.title("🏦 DSR 담보계산기")
 
 # 1. 연소득 입력
 annual_income = comma_number_input("연소득을 입력하세요", key="annual_income", value="97000000")
@@ -48,14 +55,14 @@ num_loans = st.number_input("기존 대출 항목 수", min_value=0, max_value=1
 
 for i in range(num_loans):
     st.markdown(f"**대출 {i+1}**")
-    amount = comma_number_input(f"대출 {i+1} 금액 (원)", key=f"amount_{i}")
+    amount = comma_number_input(f"대출 {i+1} 금액", key=f"amount_{i}")
     rate = st.number_input(f"대출 {i+1} 연이자율 (%)", min_value=0.0, format="%.2f", key=f"rate_{i}")
     years = st.number_input(f"대출 {i+1} 기간 (년)", min_value=0, key=f"years_{i}")
     existing_loans.append({"amount": amount, "rate": rate, "years": years})
 
 # 4. 신규 대출 희망 조건
 st.subheader("신규 대출 희망 조건")
-new_loan_amount = comma_number_input("희망 신규 대출 금액 (원)", key="new_loan")
+new_loan_amount = comma_number_input("희망 신규 대출 금액", key="new_loan")
 new_loan_rate = st.number_input("희망 신규 대출 연이자율 (%)", min_value=0.0, format="%.2f")
 new_loan_years = st.number_input("희망 신규 대출 기간 (년)", min_value=0)
 
@@ -110,3 +117,7 @@ if st.button("최대 대출 가능 금액 계산"):
         max_loan = available_payment * calc_months
         st.success(f"무이자 조건에서 최대 대출 가능 금액은 {max_loan:,.0f} 원입니다.")
 
+
+
+  
+ 
