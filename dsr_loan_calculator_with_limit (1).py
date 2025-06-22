@@ -94,11 +94,11 @@ if st.button("계산하기"):
     available_payment = dsr_limit - total_existing_monthly
     st.write(f"여유 상환 가능액: {available_payment:,.0f} 원")
     ltv_limit_raw = apt_price * ltv_ratio
-ltv_limit = ltv_limit_raw
-if first_home and ltv_limit > 600_000_000:
-    ltv_limit = 600_000_000  # 생애최초 최대한도 적용
-st.write(f"LTV 기준 최대 대출 가능액: {ltv_limit:,.0f} 원")
-st.write(f"(원래 LTV 한도: {ltv_limit_raw:,.0f} 원)")
+    ltv_limit = ltv_limit_raw
+    if first_home and ltv_limit > 600_000_000:
+        ltv_limit = 600_000_000  # 생애최초 최대한도 적용
+    st.write(f"LTV 기준 최대 대출 가능액: {ltv_limit:,.0f} 원")
+    st.write(f"(원래 LTV 한도: {ltv_limit_raw:,.0f} 원)")
 
     new_loan_monthly = calculate_monthly_payment(new_loan_amount, new_loan_rate, new_loan_years)
     st.write(f"신규 대출 월 상환액: {new_loan_monthly:,.0f} 원")
@@ -136,6 +136,6 @@ if st.button("최대 대출 가능 금액 계산"):
     else:
         st.success(f"📌 최대 대출 가능 금액: {max_loan:,.0f} 원 ({calc_years}년, 연 {calc_rate}% 기준)")
         st.info(f"💡 LTV 기준 최대 대출 가능액: {ltv_limit:,.0f} 원")
-st.info(f"📊 원래 계산된 LTV 한도: {ltv_limit_raw:,.0f} 원")
+        st.info(f"📊 원래 계산된 LTV 한도: {ltv_limit_raw:,.0f} 원")
         st.info(f"🏠 아파트 시세: {apt_price:,.0f} 원")
 
