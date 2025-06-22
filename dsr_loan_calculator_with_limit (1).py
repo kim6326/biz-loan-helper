@@ -37,15 +37,13 @@ LTV_MAP = {
 
 st.title("🏦 DSR 담보계산기")
 
-# 내생에 최초 여부 확인
-first_home = st.checkbox("내생에 최초 주택 구입 여부 (생애최초)")
-
 # 1. 연소득 입력
 annual_income = comma_number_input("연소득을 입력하세요", key="annual_income", value="")
 
 # 2. 지역 선택 및 LTV 입력 옵션
 region = st.selectbox("지역을 선택하세요", list(LTV_MAP.keys()))
 use_custom_ltv = st.checkbox("LTV 직접 입력하기")
+first_home = st.checkbox("내생에 최초 주택 구입 여부 (생애최초)")
 if use_custom_ltv:
     ltv_ratio = st.number_input("직접 입력한 LTV 비율 (%)", min_value=0.0, max_value=100.0, value=60.0, step=0.1) / 100
 else:
@@ -138,4 +136,3 @@ if st.button("최대 대출 가능 금액 계산"):
         st.info(f"💡 LTV 기준 최대 대출 가능액: {ltv_limit:,.0f} 원")
         st.info(f"📊 원래 계산된 LTV 한도: {ltv_limit_raw:,.0f} 원")
         st.info(f"🏠 아파트 시세: {apt_price:,.0f} 원")
-
