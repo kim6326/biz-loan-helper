@@ -93,14 +93,18 @@ calc_rate = st.number_input("계산용 연이자율 (%)", value=4.7, key="calc_r
 calc_years = st.number_input("계산용 대출 기간 (년)", value=30, key="calc_years")
 
 if st.button("최대 대출 가능 금액 계산"):
+    total_existing_monthly = sum(
+        calculate_monthly_payment(loan["amount"], loan["rate"], loan["years"]) for loan in existing_loans
+    )
+    dsr_limit = (annual_income / 12) * DSR_RATIO
+    available_payment = dsr_limit - total_existing_monthly
+
     calc_monthly_rate = calc_rate / 100 / 12
     calc_months = int(calc_years * 12)
+
     if calc_monthly_rate > 0:
         max_loan = available_payment * ((1 + calc_monthly_rate)**calc_months - 1) / (calc_monthly_rate * (1 + calc_monthly_rate)**calc_months)
         st.success(f"{calc_years}년, 연 {calc_rate}% 기준으로 최대 대출 가능 금액은 {max_loan:,.0f} 원입니다.")
     else:
         max_loan = available_payment * calc_months
         st.success(f"무이자 조건에서 최대 대출 가능 금액은 {max_loan:,.0f} 원입니다.")
-
-
- 
