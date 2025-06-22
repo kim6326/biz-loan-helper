@@ -1,5 +1,3 @@
-
-
 import streamlit as st
 import re
 
@@ -40,7 +38,7 @@ LTV_MAP = {
 st.title("🏦 DSR 담보계산기")
 
 # 1. 연소득 입력
-annual_income = comma_number_input("연소득을 입력하세요", key="annual_income", value="97000000")
+annual_income = comma_number_input("연소득을 입력하세요", key="annual_income", value="")
 
 # 2. 지역 선택 및 LTV 입력 옵션
 region = st.selectbox("지역을 선택하세요", list(LTV_MAP.keys()))
@@ -127,3 +125,4 @@ if st.button("최대 대출 가능 금액 계산"):
         st.success(f"📌 하지만 현재 조건에서 최대 약 {max_loan:,.0f} 원까지 대출이 가능할 수 있습니다.")
     else:
         st.success(f"{calc_years}년, 연 {calc_rate}% 기준으로 최대 대출 가능 금액은 {max_loan:,.0f} 원입니다.")
+
