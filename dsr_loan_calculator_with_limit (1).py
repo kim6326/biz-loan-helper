@@ -113,11 +113,12 @@ if st.button("최대 대출 가능 금액 계산"):
     calc_monthly_rate = calc_rate / 100 / 12
     calc_months = int(calc_years * 12)
 
-    if calc_monthly_rate > 0:
-        max_loan = available_payment * ((1 + calc_monthly_rate)**calc_months - 1) / (calc_monthly_rate * (1 + calc_monthly_rate)**calc_months)
-        st.success(f"{calc_years}년, 연 {calc_rate}% 기준으로 최대 대출 가능 금액은 {max_loan:,.0f} 원입니다.")
+    if available_payment <= 0:
+        st.warning("현재 기존 대출 상환액이 DSR 한도를 초과했습니다.")
+        st.info("신규 대출이 불가능한 상태입니다. 연소득을 높이거나 기존 대출을 줄이시면 대출이 가능해질 수 있습니다.")
     else:
-        max_loan = available_payment * calc_months
-        st.success(f"무이자 조건에서 최대 대출 가능 금액은 {max_loan:,.0f} 원입니다.")
-
-    
+        if calc_monthly_rate > 0:
+            max_loan = available_payment * ((1 + calc_monthly_rate)**calc_months - 1) / (calc_monthly_rate * (1 + calc_monthly_rate)**calc_months)
+        else:
+            max_loan = available_payment * calc_months
+        st.success(f"{calc_years}년, 연 {calc_rate}% 기준으로 최대 대출 가능 금액은 {max_loan:,.0f} 원입니다.")
