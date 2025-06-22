@@ -21,8 +21,13 @@ LTV_MAP = {
 
 st.title("DSR 기반 담보대출 계산기")
 
-# 1. 연소득 입력
-annual_income = st.number_input("연소득을 입력하세요 (원)", min_value=0, step=1000000)
+# 1. 연소득 입력 (자리수 표시용)
+annual_income_input = st.text_input("연소득을 입력하세요 (예: 97,000,000)", value="0")
+try:
+    annual_income = int(annual_income_input.replace(',', '').strip())
+except ValueError:
+    st.error("유효한 숫자를 입력하세요.")
+    annual_income = 0
 
 # 2. 지역 선택
 region = st.selectbox("지역을 선택하세요", list(LTV_MAP.keys()))
@@ -35,14 +40,27 @@ num_loans = st.number_input("기존 대출 항목 수", min_value=0, max_value=1
 
 for i in range(num_loans):
     st.markdown(f"**대출 {i+1}**")
-    amount = st.number_input(f"대출 {i+1} 금액 (원)", min_value=0, key=f"amount_{i}")
+    amount_input = st.text_input(f"대출 {i+1} 금액 (예: 10,000,000)", value="0", key=f"amount_input_{i}")
+    try:
+        amount = int(amount_input.replace(',', '').strip())
+    except ValueError:
+        st.error(f"대출 {i+1} 금액이 잘못되었습니다.")
+        amount = 0
+
     rate = st.number_input(f"대출 {i+1} 연이자율 (%)", min_value=0.0, format="%.2f", key=f"rate_{i}")
     years = st.number_input(f"대출 {i+1} 기간 (년)", min_value=0, key=f"years_{i}")
     existing_loans.append({"amount": amount, "rate": rate, "years": years})
 
 # 4. 신규 대출 희망 조건
 st.subheader("신규 대출 희망 조건")
-new_loan_amount = st.number_input("희망 신규 대출 금액 (원)", min_value=0)
+
+new_loan_amount_input = st.text_input("희망 신규 대출 금액 (예: 400,000,000)", value="0")
+try:
+    new_loan_amount = int(new_loan_amount_input.replace(',', '').strip())
+except ValueError:
+    st.error("신규 대출 금액이 잘못되었습니다.")
+    new_loan_amount = 0
+
 new_loan_rate = st.number_input("희망 신규 대출 연이자율 (%)", min_value=0.0, format="%.2f")
 new_loan_years = st.number_input("희망 신규 대출 기간 (년)", min_value=0)
 
@@ -92,3 +110,6 @@ if st.button("최대 대출 가능 금액 계산"):
     else:
         max_loan = available_payment * calc_months
         st.success(f"무이자 조건에서 최대 대출 가능 금액은 {max_loan:,.0f} 원입니다.")
+
+
+   
