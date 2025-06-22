@@ -5,10 +5,10 @@ import re
 st.set_page_config(
     page_title="DSR 담보계산기",
     page_icon="🏦",
-    layout="centered"
+    layout="wide"  # 모바일/데스크탑 전체 화면 최적화
 )
 
-# 입력값에 콤마 자동 적용 함수 (단위 제거, 자리수만 표시)
+# 입력값에 콤마 자동 적용 함수 (자리수만 표시)
 def comma_number_input(label, key, value="0"):
     user_input = st.text_input(label, value=value, key=key)
     digits_only = re.sub(r'[^0-9]', '', user_input)
@@ -98,7 +98,7 @@ if st.button("계산하기"):
     else:
         st.error("신규 대출 실행 불가!")
 
-# ✅ 추가: 최대 대출 가능 금액 역산 계산기
+# ✅ 최대 대출 가능 금액 역산 계산기
 st.subheader("신규 대출 최대 가능 금액 계산기")
 calc_rate = st.number_input("계산용 연이자율 (%)", value=4.7, key="calc_rate")
 calc_years = st.number_input("계산용 대출 기간 (년)", value=30, key="calc_years")
@@ -113,16 +113,16 @@ if st.button("최대 대출 가능 금액 계산"):
     calc_monthly_rate = calc_rate / 100 / 12
     calc_months = int(calc_years * 12)
 
-    adjusted_payment = max(0, available_payment)  # 음수일 경우 0으로 고정
+    adjusted_payment = max(0, available_payment)
 
     if calc_monthly_rate > 0:
         max_loan = adjusted_payment * ((1 + calc_monthly_rate)**calc_months - 1) / (calc_monthly_rate * (1 + calc_monthly_rate)**calc_months)
     else:
         max_loan = adjusted_payment * calc_months
 
-    if available_payment <= 0:
-        st.warning("현재 기존 대출로 인해 DSR 한도를 초과했습니다.")
-        st.success(f"📌 하지만 현재 조건에서 최대 약 {max_loan:,.0f} 원까지 대출이 가능할 수 있습니다.")
+    if max_loan <= 0:
+        st.error("❌ 현재 조건에서는 추가 대출이 불가능합니다.")
+        st.info("기존 대출을 줄이거나 연소득을 높이시면 추가 대출이 가능할 수 있습니다.")
     else:
         st.success(f"{calc_years}년, 연 {calc_rate}% 기준으로 최대 대출 가능 금액은 {max_loan:,.0f} 원입니다.")
 
