@@ -116,6 +116,11 @@ calc_rate = st.number_input("계산용 연이자율 (%)", value=4.7, key="calc_r
 calc_years = st.number_input("계산용 대출 기간 (년)", value=30, key="calc_years")
 
 if st.button("최대 대출 가능 금액 계산"):
+    # LTV 계산 재적용 (NameError 방지)
+    ltv_limit_raw = apt_price * ltv_ratio
+    ltv_limit = ltv_limit_raw
+    if first_home and ltv_limit > 600_000_000:
+        ltv_limit = 600_000_000
     total_existing_monthly = sum(
         calculate_monthly_payment(loan["amount"], loan["rate"], loan["years"]) for loan in existing_loans
     )
@@ -140,4 +145,6 @@ if st.button("최대 대출 가능 금액 계산"):
         st.info(f"💡 LTV 기준 최대 대출 가능액: {ltv_limit:,.0f} 원")
         st.info(f"📊 원래 계산된 LTV 한도: {ltv_limit_raw:,.0f} 원")
         st.info(f"🏠 아파트 시세: {apt_price:,.0f} 원")
+
+
 
