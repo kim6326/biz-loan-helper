@@ -2,7 +2,7 @@ import streamlit as st
 import re
 
 st.set_page_config(
-    page_title="DSR 담보계산기",
+    page_title="DSR 담보계산기 (스트레스 DSR 적용)",
     page_icon="🏦",
     layout="wide"
 )
@@ -24,17 +24,11 @@ def calculate_monthly_payment(principal, annual_rate, years):
     payment = principal * (monthly_rate * (1 + monthly_rate) ** months) / ((1 + monthly_rate) ** months - 1)
     return payment
 
-LTV_MAP = {
-    "서울": 0.70,
-    "경기": 0.65,
-    "부산": 0.60,
-    "기타": 0.60,
-}
+LTV_MAP = {"서울": 0.70, "경기": 0.65, "부산": 0.60, "기타": 0.60}
 
-st.title("🏦 DSR 담보계산기")
+st.title("🏦 DSR 담보계산기 (스트레스 DSR 적용)")
 
 annual_income = comma_number_input("연소득을 입력하세요", key="annual_income", value="")
-
 region = st.selectbox("지역을 선택하세요", list(LTV_MAP.keys()))
 use_custom_ltv = st.checkbox("LTV 직접 입력하기")
 first_home = st.checkbox("내생에 최초 주택 구입 여부 (생애최초)")
@@ -66,65 +60,36 @@ st.subheader("신규 대출 희망 조건")
 new_loan_amount = comma_number_input("희망 신규 대출 금액", key="new_loan")
 new_loan_rate = st.number_input("희망 신규 대출 연이자율 (%)", min_value=0.0, format="%.2f")
 new_loan_years = st.number_input("희망 신규 대출 기간 (년)", min_value=0)
+loan_type = st.selectbox("신규 대출 유형 선택", ["고정형", "변동형", "혼합형"])
+
+# 스트레스 금리 설정
+stress_rate = new_loan_rate
+if loan_type == "변동형":
+    stress_rate += 2.0
+elif loan_type == "혼합형":
+    stress_rate += 1.0  # 예시: 혼합형은 1% 가산
 
 DSR_RATIO = 0.4
 
 if st.button("계산하기"):
     total_existing_monthly = 0
-    st.write("## 기존 대출 월 상환액")
-    for idx, loan in enumerate(existing_loans):
-        monthly_payment = calculate_monthly_payment(loan["amount"], loan["rate"], loan["years"])
-        st.write(f"대출 {idx+1}: {monthly_payment:,.0f} 원")
-        total_existing_monthly += monthly_payment
-
-    st.write(f"**총 기존 대출 월 상환액: {total_existing_monthly:,.0f} 원**")
+    for loan in existing_loans:
+        total_existing_monthly += calculate_monthly_payment(loan["amount"], loan["rate"], loan["years"])
     dsr_limit = (annual_income / 12) * DSR_RATIO
-    st.write(f"DSR 한도 (연소득 × {DSR_RATIO*100}%): {dsr_limit:,.0f} 원")
-
     available_payment = dsr_limit - total_existing_monthly
-    st.write(f"여유 상환 가능액: {available_payment:,.0f} 원")
 
     ltv_limit_raw = apt_price * ltv_ratio
     ltv_limit = min(ltv_limit_raw, 600_000_000) if first_home else ltv_limit_raw
 
-    st.write(f"LTV 기준 최대 대출 가능액: {ltv_limit:,.0f} 원")
-    st.write(f"(원래 LTV 한도: {ltv_limit_raw:,.0f} 원)")
+    new_loan_monthly = calculate_monthly_payment(new_loan_amount, stress_rate, new_loan_years)
 
-    new_loan_monthly = calculate_monthly_payment(new_loan_amount, new_loan_rate, new_loan_years)
-    st.write(f"신규 대출 월 상환액: {new_loan_monthly:,.0f} 원")
+    st.write(f"DSR 한도: {dsr_limit:,.0f} 원")
+    st.write(f"총 기존 대출 월 상환액: {total_existing_monthly:,.0f} 원")
+    st.write(f"여유 상환 가능액: {available_payment:,.0f} 원")
+    st.write(f"스트레스 금리 적용 월 상환액: {new_loan_monthly:,.0f} 원")
+    st.write(f"LTV 기준 최대 대출 가능액: {ltv_limit:,.0f} 원")
 
     if new_loan_amount <= ltv_limit and new_loan_monthly <= available_payment:
-        st.success("신규 대출 실행 가능!")
+        st.success("✅ 스트레스 DSR 기준 신규 대출 가능")
     else:
-        st.error("신규 대출 실행 불가!")
-
-st.subheader("신규 대출 최대 가능 금액 계산기")
-calc_rate = st.number_input("계산용 연이자율 (%)", value=4.7, key="calc_rate")
-calc_years = st.number_input("계산용 대출 기간 (년)", value=30, key="calc_years")
-
-if st.button("최대 대출 가능 금액 계산"):
-    total_existing_monthly = sum(
-        calculate_monthly_payment(loan["amount"], loan["rate"], loan["years"]) for loan in existing_loans
-    )
-    dsr_limit = (annual_income / 12) * DSR_RATIO
-    available_payment = dsr_limit - total_existing_monthly
-
-    calc_monthly_rate = calc_rate / 100 / 12
-    calc_months = int(calc_years * 12)
-
-    adjusted_payment = max(0, available_payment)
-
-    if calc_monthly_rate > 0:
-        max_loan = adjusted_payment * ((1 + calc_monthly_rate)**calc_months - 1) / (calc_monthly_rate * (1 + calc_monthly_rate)**calc_months)
-    else:
-        max_loan = adjusted_payment * calc_months
-
-    if max_loan <= 0:
-        st.error("❌ 현재 조건에서는 추가 대출이 불가능합니다.")
-        st.info("기존 대출을 줄이거나 연소득을 높이시면 추가 대출이 가능할 수 있습니다.")
-    else:
-        st.success(f"📌 최대 대출 가능 금액: {max_loan:,.0f} 원 ({calc_years}년, 연 {calc_rate}% 기준)")
-        st.info(f"💡 LTV 기준 최대 대출 가능액: {ltv_limit:,.0f} 원")
-        st.info(f"📊 원래 계산된 LTV 한도: {ltv_limit_raw:,.0f} 원")
-        st.info(f"🏠 아파트 시세: {apt_price:,.0f} 원")
-
+        st.error("❌ 스트레스 DSR 기준 신규 대출 불가")
