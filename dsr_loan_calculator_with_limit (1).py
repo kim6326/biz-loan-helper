@@ -1,7 +1,7 @@
 import streamlit as st
 import re
 
-# 1) 페이지 설정 (모바일·데스크탑 대응)
+# 1) 페이지 설정
 st.set_page_config(
     page_title="DSR 담보계산기",
     page_icon="🏦",
@@ -53,35 +53,34 @@ def get_stress_multiplier(loan_type, fixed_years, total_years, cycle_level=None)
 LTV_MAP = {
     "서울": 0.70,
     "경기": 0.70,
-    "인천": 0.70,  # 수도권
-    "부산": 0.60,  # 비수도권 예시
-    "기타": 0.60,  # 그 외 비수도권
+    "인천": 0.70,
+    "부산": 0.60,
+    "기타": 0.60,
 }
 
-st.title("🏦 DSR 담보계산기 (수도권·비수도권 LTV 구분)")
+st.title("🏦 DSR 담보계산기 (스트레스 감면 적용)")
 
 # 6) 연소득 입력
 annual_income = comma_number_input("연소득을 입력하세요", key="annual_income")
 
 # 7) 지역 / 생애최초 / LTV 수동입력
 region = st.selectbox("지역을 선택하세요", list(LTV_MAP.keys()))
-first_home = st.checkbox("생애최초 주택 구입 여부 (LTV 최대 70%)")
+first_home = st.checkbox("생애최초 주택 구입 여부")
 use_custom_ltv = st.checkbox("LTV 수동 입력")
 
 if use_custom_ltv:
     ltv_ratio = st.number_input(
-        "직접 입력할 LTV 비율 (%)",
+        "직접 입력한 LTV 비율 (%)",
         min_value=0.0, max_value=100.0, value=70.0, step=0.1
     ) / 100
 elif first_home:
-    # 생애최초는 수도권/비수도권 상관없이 70% 고정
     ltv_ratio = 0.70
 else:
     ltv_ratio = LTV_MAP[region]
 
 # 8) 아파트 시세 입력
 apt_price = comma_number_input("아파트 시세 (KB 기준)", key="apt_price")
-st.markdown(f"▶ 입력 시세: {apt_price:,} 원  |  기본 LTV 비율: {ltv_ratio*100:.1f}%")
+st.markdown(f"▶ 입력 시세: {apt_price:,} 원  |  LTV: {ltv_ratio*100:.1f}%")
 
 # 9) 기존 대출 내역 입력
 st.subheader("기존 대출 내역")
@@ -96,7 +95,7 @@ for i in range(num_loans):
 
 # 10) 신규 대출 조건 입력
 st.subheader("신규 대출 조건")
-loan_type = st.selectbox("대출 유형 선택", ["고정형", "혼합형", "변동형", "주기형"])
+loan_type = st.selectbox("대출 유형 선택", ["고정형","혼합형","변동형","주기형"])
 fixed_years = 0
 if loan_type == "혼합형":
     fixed_years = st.number_input("↳ 고정금리 적용 기간 (년)", min_value=0, value=5)
@@ -120,26 +119,35 @@ new_amount = comma_number_input("신규 대출 금액", key="new_amount")
 # 11) 계산하기
 DSR_RATIO = 0.4
 if st.button("계산하기"):
-    exist_mon = sum(
-        calculate_monthly_payment(l["amount"], l["rate"], l["years"])
-        for l in existing_loans
-    )
-    dsr_limit = (annual_income / 12) * DSR_RATIO
+    exist_mon = sum(calculate_monthly_payment(l["amount"], l["rate"], l["years"]) for l in existing_loans)
+    dsr_limit = (annual_income/12) * DSR_RATIO
     available = dsr_limit - exist_mon
 
+    # 스트레스 금리 계산
     mult = get_stress_multiplier(loan_type, fixed_years, total_years, cycle_level)
     stress_rate = new_rate * mult
-    new_mon = calculate_monthly_payment(new_amount, stress_rate, total_years)
 
+    # 지역별 감면폭 적용
+    if region in ["서울","경기","인천"]:
+        discount = 1.5
+    else:
+        discount = 0.75
+    adjusted_rate = stress_rate - discount
+
+    # 월 상환액 계산 (감면 후 금리)
+    new_mon = calculate_monthly_payment(new_amount, adjusted_rate, total_years)
+
+    # LTV 한도 계산
     ltv_cap = apt_price * ltv_ratio
     if first_home:
-        # 생애최초 최대 한도(예: 6억)까지 적용
         ltv_cap = min(ltv_cap, 600_000_000)
 
+    # 결과 출력
     st.write(f"▶ 기존 월 상환액: {exist_mon:,.0f} 원")
     st.write(f"▶ DSR 월 한도: {dsr_limit:,.0f} 원 (40%)")
     st.write(f"▶ 여유 상환액: {available:,.0f} 원")
-    st.write(f"▶ 스트레스 금리: {stress_rate:.2f}% (배율 {mult:.1f}배)")
+    st.write(f"▶ 스트레스 금리 (감면 전): {stress_rate:.2f}%")
+    st.write(f"▶ 스트레스 금리 (감면 후): {adjusted_rate:.2f}%  (−{discount:.2f}%p)")
     st.write(f"▶ 신규 월 상환액: {new_mon:,.0f} 원")
     st.write(f"▶ LTV 한도: {ltv_ratio*100:.1f}% → {ltv_cap:,.0f} 원")
 
@@ -153,20 +161,15 @@ st.subheader("최대 대출 가능금액 계산기")
 calc_rate = st.number_input("계산용 금리 (%)", value=4.7, format="%.2f", key="calc_rate")
 calc_years = st.number_input("계산용 기간 (년)", value=30, key="calc_years")
 if st.button("최대 계산"):
-    exist_mon = sum(
-        calculate_monthly_payment(l["amount"], l["rate"], l["years"])
-        for l in existing_loans
-    )
-    available = (annual_income / 12) * DSR_RATIO - exist_mon
-    mr = (calc_rate * mult) / 100 / 12
-    n = calc_years * 12
-    max_loan = (available * ((1+mr)**n - 1) / (mr*(1+mr)**n)) if mr > 0 else available * n
-
+    exist_mon = sum(calculate_monthly_payment(l["amount"], l["rate"], l["years"]) for l in existing_loans)
+    available = (annual_income/12)*DSR_RATIO - exist_mon
+    mr = (calc_rate*mult)/100/12
+    n = calc_years*12
+    max_loan = (available*((1+mr)**n - 1)/(mr*(1+mr)**n)) if mr>0 else available*n
     cap = apt_price * ltv_ratio
     if first_home:
-        cap = min(cap, 600_000_000)
+        cap = min(cap,600_000_000)
     final = min(max_loan, cap)
-
     if final > 0:
         st.success(f"📌 최대 대출 가능 금액: {final:,.0f} 원")
     else:
