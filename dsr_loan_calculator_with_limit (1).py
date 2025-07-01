@@ -23,12 +23,14 @@ def calculate_monthly_payment(principal, annual_rate, years):
         return principal / months
     return principal * (monthly_rate * (1 + monthly_rate) ** months) / ((1 + monthly_rate) ** months - 1)
 
+# 지역별 기본 LTV
 LTV_MAP = {
     "서울": 0.70,
     "경기/인천": 0.65,
     "기타": 0.60
 }
 
+# 스트레스 DSR 가산율
 STRESS_RATE_MAP = {
     "고정형": 1.0,
     "혼합형 (80%)": 1.8,
@@ -39,24 +41,31 @@ STRESS_RATE_MAP = {
     "주기형 (20%)": 1.2
 }
 
+# 입력 받기
 st.title("🏦 DSR 담보계산기 (스트레스 DSR 반영)")
 
 annual_income = comma_number_input("연소득을 입력하세요", key="annual_income")
 region = st.selectbox("지역을 선택하세요", list(LTV_MAP.keys()))
 apt_price = comma_number_input("아파트 시세 (KB 시세 기준)", key="apt_price")
 first_home = st.checkbox("내생에 최초 주택 구입 여부 (생애최초)")
+use_custom_ltv = st.checkbox("LTV 직접 입력하기")
 
-# ✅ 생애최초 시 70% 적용
-if first_home:
-    ltv_ratio = 0.70
-    max_ltv_limit = apt_price * ltv_ratio
+# ✅ LTV 계산 로직
+if use_custom_ltv:
+    ltv_ratio = st.number_input("직접 입력한 LTV 비율 (%)", min_value=0.0, max_value=100.0, value=60.0, step=0.1) / 100
 else:
-    ltv_ratio = LTV_MAP.get(region, 0.6)
-    max_ltv_limit = apt_price * ltv_ratio
+    if first_home:
+        ltv_ratio = 0.70  # 생애최초는 자동 70%
+    else:
+        ltv_ratio = LTV_MAP.get(region, 0.6)
 
+max_ltv_limit = apt_price * ltv_ratio
+
+# 금리 구조 선택
 loan_type = st.selectbox("금리 구조를 선택하세요", list(STRESS_RATE_MAP.keys()))
 stress_multiplier = STRESS_RATE_MAP[loan_type]
 
+# 기존 대출 입력
 st.subheader("기존 대출 내역")
 existing_loans = []
 num_loans = st.number_input("기존 대출 항목 수", min_value=0, max_value=10, value=0)
@@ -67,11 +76,13 @@ for i in range(num_loans):
     years = st.number_input(f"대출 {i+1} 기간 (년)", min_value=0, key=f"years_{i}")
     existing_loans.append({"amount": amount, "rate": rate, "years": years})
 
+# 신규 대출 조건
 st.subheader("신규 대출 조건")
 desired_amount = comma_number_input("신규 대출 희망 금액", key="new_loan")
 base_rate = st.number_input("기본 대출 금리 (%)", value=4.7, format="%.2f")
 term = st.number_input("대출 기간 (년)", value=30)
 
+# 계산
 if st.button("계산하기"):
     total_existing_monthly = sum(
         calculate_monthly_payment(loan["amount"], loan["rate"], loan["years"])
@@ -92,15 +103,13 @@ if st.button("계산하기"):
     else:
         max_loan = available_payment * months
 
-    ltv_limit = min(max_ltv_limit, apt_price * ltv_ratio)
-
     st.markdown("---")
     st.markdown(f"🏠 **아파트 시세:** {apt_price:,.0f} 원")
-    st.markdown(f"🔒 **LTV 기준 최대 대출 가능액:** {ltv_limit:,.0f} 원")
+    st.markdown(f"📐 **LTV 비율:** {ltv_ratio * 100:.1f}%")
+    st.markdown(f"🔒 **LTV 기준 최대 대출 가능액:** {max_ltv_limit:,.0f} 원")
     st.markdown(f"📈 **스트레스 적용 금리:** {stressed_rate:.2f}%")
     st.markdown(f"💰 **DSR 기준 최대 대출 가능액:** {max_loan:,.0f} 원")
 
-    final_limit = min(max_loan, ltv_limit)
+    final_limit = min(max_loan, max_ltv_limit)
     st.success(f"📌 **최종 대출 가능 금액:** {final_limit:,.0f} 원")
-
 
