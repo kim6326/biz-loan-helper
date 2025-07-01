@@ -49,17 +49,23 @@ def get_stress_multiplier(loan_type, fixed_years, total_years, cycle_level=None)
         return {"1단계": 1.4, "2단계": 1.3, "3단계": 1.2}[cycle_level]
     return 1.0
 
-# 5) 지역별 기본 LTV 맵
-LTV_MAP = {"서울": 0.7, "경기": 0.65, "부산": 0.6, "기타": 0.6}
+# 5) 지역별 LTV 기본값 (수도권 vs 비수도권)
+LTV_MAP = {
+    "서울": 0.70,
+    "경기": 0.70,
+    "인천": 0.70,  # 수도권
+    "부산": 0.60,  # 비수도권 예시
+    "기타": 0.60,  # 그 외 비수도권
+}
 
-st.title("🏦 DSR 담보계산기 (최종 통합본)")
+st.title("🏦 DSR 담보계산기 (수도권·비수도권 LTV 구분)")
 
 # 6) 연소득 입력
 annual_income = comma_number_input("연소득을 입력하세요", key="annual_income")
 
 # 7) 지역 / 생애최초 / LTV 수동입력
 region = st.selectbox("지역을 선택하세요", list(LTV_MAP.keys()))
-first_home = st.checkbox("생애최초 주택 구입 여부")
+first_home = st.checkbox("생애최초 주택 구입 여부 (LTV 최대 70%)")
 use_custom_ltv = st.checkbox("LTV 수동 입력")
 
 if use_custom_ltv:
@@ -68,13 +74,14 @@ if use_custom_ltv:
         min_value=0.0, max_value=100.0, value=70.0, step=0.1
     ) / 100
 elif first_home:
-    ltv_ratio = 0.7
+    # 생애최초는 수도권/비수도권 상관없이 70% 고정
+    ltv_ratio = 0.70
 else:
     ltv_ratio = LTV_MAP[region]
 
 # 8) 아파트 시세 입력
 apt_price = comma_number_input("아파트 시세 (KB 기준)", key="apt_price")
-st.markdown(f"▶ 입력 시세: {apt_price:,} 원  |  LTV: {ltv_ratio*100:.1f}%")
+st.markdown(f"▶ 입력 시세: {apt_price:,} 원  |  기본 LTV 비율: {ltv_ratio*100:.1f}%")
 
 # 9) 기존 대출 내역 입력
 st.subheader("기존 대출 내역")
@@ -126,6 +133,7 @@ if st.button("계산하기"):
 
     ltv_cap = apt_price * ltv_ratio
     if first_home:
+        # 생애최초 최대 한도(예: 6억)까지 적용
         ltv_cap = min(ltv_cap, 600_000_000)
 
     st.write(f"▶ 기존 월 상환액: {exist_mon:,.0f} 원")
@@ -149,8 +157,7 @@ if st.button("최대 계산"):
         calculate_monthly_payment(l["amount"], l["rate"], l["years"])
         for l in existing_loans
     )
-    dsr_limit = (annual_income / 12) * DSR_RATIO
-    available = dsr_limit - exist_mon
+    available = (annual_income / 12) * DSR_RATIO - exist_mon
     mr = (calc_rate * mult) / 100 / 12
     n = calc_years * 12
     max_loan = (available * ((1+mr)**n - 1) / (mr*(1+mr)**n)) if mr > 0 else available * n
