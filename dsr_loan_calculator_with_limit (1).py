@@ -163,7 +163,16 @@ if page == "전세대출 계산기":
         st.markdown(f"현재 DSR: **{curr:.2f}%** / 예상 DSR: **{est:.2f}%**")
         st.markdown(f"추천상품: **{prod}** / 한도: **{lim:,}원** / 가능여부: **{'가능' if ok else '불가'}**")
         # 이력 저장
-                st.session_state.history.append({
+        st.session_state.history.append({
+            'type': '전세',
+            'time': datetime.now().strftime('%Y-%m-%d %H:%M'),
+            'inputs': {'age': age, 'income': income, 'market_price': mp,
+                       'jeonse_deposit': je, 'hope_loan': ho, 'org': org,
+                       'rate': rate, 'years': yrs, 'stress': use_stress,
+                       'life_amount': life_amount},
+            'result': {'current_dsr': curr, 'estimated_dsr': est,
+                       'product': prod, 'limit': lim, 'approved': ok}
+        })        st.session_state.history.append({
             'type': '전세',
             'time': datetime.now().strftime('%Y-%m-%d %H:%M'),
             'inputs': {'age': age, 'income': income, 'market_price': mp,
@@ -176,3 +185,5 @@ if page == "전세대출 계산기":
 
 # DSR 담보계산기 및 내 이력 페이지는 이하 생략...
 
+   
+  
