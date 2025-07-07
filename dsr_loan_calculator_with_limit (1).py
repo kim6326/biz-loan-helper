@@ -8,6 +8,9 @@ st.set_page_config(
     layout="centered"
 )
 
+if 'history' not in st.session_state:
+    st.session_state.history = []
+
 def comma_number_input(label, key, value="0"):
     user_input = st.text_input(label, value=value, key=key)
     digits = re.sub(r'[^0-9]', '', user_input)
@@ -38,7 +41,7 @@ def get_stress_multiplier(loan_type, fixed_years, total_years, cycle_level=None)
 
 LTV_MAP = {"서울":0.7,"경기":0.7,"인천":0.7,"부산":0.6,"기타":0.6}
 
-page = st.sidebar.selectbox("계산기 선택", ["DSR 담보계산기", "전세대출 계산기"])
+page = st.sidebar.selectbox("계산기 선택", ["DSR 담보계산기", "전세대출 계산기", "내 이력"])
 
 if page == "DSR 담보계산기":
     st.title("🏦 DSR 담보계산기 (스트레스 감면 포함)")
@@ -114,6 +117,13 @@ if page == "DSR 담보계산기":
         else:
             st.error("❌ 신규 대출 불가")
 
+        st.session_state.history.append({
+            'type': '담보',
+            'time': datetime.now().strftime('%Y-%m-%d %H:%M'),
+            'inputs': {'income': annual_income, 'region': region, 'apt_price': apt_price},
+            'result': {'stress_rate': stress_rate, 'adjusted_rate': adjusted_rate, 'monthly': new_mon}
+        })
+
     st.subheader("최대 대출 가능금액 계산기")
     calc_rate  = st.number_input("계산용 금리 (%)",0.0,10.0,4.7,0.01,key="calc_rate")
     calc_years = st.number_input("계산용 기간 (년)",1,100,30,key="calc_years")
@@ -155,5 +165,19 @@ elif page == "전세대출 계산기":
     example_monthly = calculate_monthly_payment(sample_amt, effective_rate, yrs)
     st.markdown(f"📌 예시 {sample_amt:,}원 월 상환액: {int(example_monthly):,}원")
 
-   
-   
+    if st.button("계산 전세"):
+        st.session_state.history.append({
+            'type': '전세',
+            'time': datetime.now().strftime('%Y-%m-%d %H:%M'),
+            'inputs': {'income': income, 'mp': mp, 'je': je, 'ho': ho},
+            'result': {'rate': effective_rate, 'monthly': ho_monthly}
+        })
+
+elif page == "내 이력":
+    st.title("📂 내 계산 이력")
+    if st.session_state.history:
+        for rec in st.session_state.history[::-1]:
+            st.markdown(f"### [{rec['time']}] {rec['type']} 계산")
+            st.json(rec)
+    else:
+        st.info("이력이 없습니다.")
