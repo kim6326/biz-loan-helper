@@ -8,7 +8,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# ─── LTV_MAP 정의 ────────────────────────────────────────
+# ─── LTV 및 DSR 비율 설정 ──────────────────────────────────
 LTV_MAP = {
     "서울": 0.7,
     "경기": 0.7,
@@ -24,8 +24,9 @@ def comma_number_input(label, key, value="0"):
     user_input = st.text_input(label, value=value, key=key)
     digits = re.sub(r'[^0-9]', '', user_input)
     formatted = f"{int(digits):,}" if digits else ""
-    st.markdown(f"<div style='color:gray; font-size:0.9em;'>입력값: {formatted}</div>",
-                unsafe_allow_html=True)
+    st.markdown(
+        f"<div style='color:gray; font-size:0.9em;'>입력값: {formatted}</div>", unsafe_allow_html=True
+    )
     return int(digits) if digits else 0
 
 # 월 상환액 계산 함수
@@ -44,14 +45,17 @@ def calculate_monthly_payment(principal, rate, years, repay_type="원리금균�
 # DSR 계산 함수
 def calculate_dsr(existing_loans, annual_income):
     total = sum(
-        calculate_monthly_payment(loan['amount'], loan['rate'], loan['years'], loan['repay_type']) * 12
-        for loan in existing_loans
+        calculate_monthly_payment(
+            loan['amount'], loan['rate'], loan['years'], loan['repay_type']
+        ) * 12 for loan in existing_loans
     )
     return (total / annual_income * 100) if annual_income > 0 else 0
 
-# 전세대출 상품 추천 함수
+# 전세대출 상품 추천 함수 (수정된 한도 로직)
 def recommend_product(age, is_married, income, market_price, jeonse_price, hope_loan, org):
+    # 전세보증금과 시세의 80% 중 작은 값을 최대 한도로 설정
     max_possible = min(jeonse_price, market_price * 0.8)
+
     if age <= 34 and income <= 70000000:
         limit = min(max_possible, 200000000 if org == "HUG" else 100000000)
         prod = "청년 전세자금대출"
@@ -61,9 +65,10 @@ def recommend_product(age, is_married, income, market_price, jeonse_price, hope_
     else:
         limit = min(max_possible, 500000000)
         prod = "일반 전세자금대출"
+
     return prod, limit, (hope_loan <= limit)
 
-# 스트레스 DSR 배율 함수
+# 스트레스 배율 함수
 def get_stress_multiplier(loan_type, fixed_years, total_years, cycle_level=None):
     if loan_type == "고정형": return 1.0
     if loan_type == "변동형": return 2.0
@@ -75,7 +80,7 @@ def get_stress_multiplier(loan_type, fixed_years, total_years, cycle_level=None)
             if ratio >= 0.4: return 1.8
         return 2.0
     if loan_type == "주기형" and cycle_level:
-        return {"1단계":1.4,"2단계":1.3,"3단계":1.2}[cycle_level]
+        return {"1단계":1.4, "2단계":1.3, "3단계":1.2}[cycle_level]
     return 1.0
 
 # 세션 이력 초기화
@@ -104,7 +109,6 @@ if page == "전세대출 계산기":
     use_stress = st.checkbox("스트레스 금리 적용 (금리 +0.6%)")
     effective_rate = rate + 0.6 if use_stress else rate
 
-    # 희망 대출 월 상환액
     if ho > 0:
         ho_mon = calculate_monthly_payment(ho, effective_rate, yrs, repay_type)
         st.markdown(f"💵 희망 대출 월 상환액: {int(ho_mon):,}원")
@@ -113,7 +117,6 @@ if page == "전세대출 계산기":
     example_mon = calculate_monthly_payment(sample_amt, effective_rate, yrs, repay_type)
     st.markdown(f"📌 예시 {sample_amt:,}원 월 상환액: {int(example_mon):,}원")
 
-    # 기존 대출 이력
     st.subheader("기존 대출 내역")
     existing_loans = []
     cnt = st.number_input("기존 대출 건수", 0, 10, 0)
@@ -156,7 +159,6 @@ elif page == "DSR 담보대출 계산기":
     price = comma_number_input("아파트 시세 (원)", "dsr_price", "500000000")
     st.markdown(f"▶ 시세: {price:,}원 | LTV: {ltv_ratio*100:.1f}%")
 
-    # 기존 대출
     st.subheader("기존 대출 내역")
     existing_loans = []
     cnt2 = st.number_input("기존 대출 건수", 0, 10, 0, key="dsr_cnt")
@@ -166,7 +168,6 @@ elif page == "DSR 담보대출 계산기":
         rt2 = st.number_input(f"이율(%)", 0.0, 10.0, 4.0, key=f"dsr_rt{i}")
         existing_loans.append({"amount": amt2, "rate": rt2, "years": yr2, "repay_type": "만기일시"})
 
-    # 신규 대출 조건
     st.subheader("신규 대출 조건")
     loan_type = st.selectbox("대출 유형", ["고정형","혼합형","변동형","주기형"], key="dsr_type")
     fixed_years = 0
@@ -191,8 +192,7 @@ elif page == "DSR 담보대출 계산기":
 
     if st.button("계산하기", key="dsr_calc"):
         exist_mon2 = sum(
-            calculate_monthly_payment(l["amount"], l["rate"], l["years"], l["repay_type"])
-            for l in existing_loans
+            calculate_monthly_payment(l["amount"], l["rate"], l["years"], l["repay_type"]) for l in existing_loans
         )
         dsr_lim = annual_income / 12 * DSR_RATIO
         avail = dsr_lim - exist_mon2
@@ -225,6 +225,3 @@ elif page == "내 이력":
             st.json(record)
     else:
         st.info("아직 계산 이력이 없습니다.")
-
-
-   
