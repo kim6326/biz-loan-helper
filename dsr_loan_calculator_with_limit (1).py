@@ -8,7 +8,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# 숫자 입력 및 콤마 출력
+# 수자 입력 및 콤바 출력
 def comma_number_input(label, key, value="0"):
     user_input = st.text_input(label, value=value, key=key)
     digits = re.sub(r'[^0-9]', '', user_input)
@@ -16,13 +16,13 @@ def comma_number_input(label, key, value="0"):
     st.markdown(f"<div style='color:gray; font-size:0.9em;'>입력값: {formatted}</div>", unsafe_allow_html=True)
     return int(digits) if digits else 0
 
-# 월 상환액 계산
-def calculate_monthly_payment(principal, years, rate, repay_type="원리금균등"):
+# 월 상화액 계산
+def calculate_monthly_payment(principal, years, rate, repay_type="원리금규단"):
     months = years * 12
     r = rate / 100 / 12
-    if repay_type == "원리금균등":
+    if repay_type == "원리금규단":
         return principal / months if r == 0 else principal * r * (1 + r)**months / ((1 + r)**months - 1)
-    if repay_type == "원금균등":
+    if repay_type == "원금규단":
         p = principal / months
         return p + principal * r
     if repay_type == "만기일시":
@@ -40,11 +40,11 @@ def calculate_dsr(existing_loans, annual_income):
 # 상품 추천
 def recommend_product(age, is_married, income, market_price, hope_loan, org):
     if age <= 34 and income <= 70000000:
-        prod, limit = "청년 전세자금대출", (200000000 if org == "HUG" else 100000000)
+        prod, limit = "청년 전세자금대주", (200000000 if org == "HUG" else 100000000)
     elif is_married and income <= 80000000:
-        prod, limit = "신혼부부 전세자금대출", 240000000
+        prod, limit = "신호부부 전세자금대주", 240000000
     else:
-        prod, limit = "일반 전세자금대출", min(market_price * 0.8, 500000000)
+        prod, limit = "일반 전세자금대주", min(market_price * 0.8, 500000000)
     return prod, limit, hope_loan <= limit
 
 LTV_MAP = {"서울":0.7, "경기":0.7, "인천":0.7, "부산":0.6, "기타":0.6}
@@ -56,13 +56,13 @@ if 'history' not in st.session_state:
 # 사이드바 메뉴
 page = st.sidebar.selectbox("계산기 선택", ["전세대출 계산기", "DSR 담보계산기", "내 이력"])
 
-# 전세대출 계산기 화면
+# 전세대주 계산기 화면
 if page == "전세대출 계산기":
-    st.title("📊 전세대출 한도 계산기 with DSR")
+    st.title("📊 전세대주 한도 계산기 with DSR")
 
     # 사용자 입력
     age = st.number_input("나이", 19, 70, 32)
-    married = st.radio("결혼 여부", ["미혼", "결혼"]) == "결혼"
+    married = st.radio("결혼 유무", ["미혼", "결혼"]) == "결혼"
     income_man = comma_number_input("연소득 (만원)", "income_man", "6000")
     income = income_man * 10000
     mp = comma_number_input("아파트 시세 (원)", "mp_input", "500000000")
@@ -72,7 +72,7 @@ if page == "전세대출 계산기":
     rate = st.number_input("이자율 (%)", 0.0, 10.0, 3.5, 0.1)
     yrs = st.number_input("기간 (년)", 1, 30, 2)
 
-    # 전세대출은 기본적으로 만기일시 상환입니다.
+    # 전세대주는 기본적으로 만기일시 상화당입니다.
     repay_type = "만기일시"
     use_stress = st.checkbox("스트레스 금리 적용 (금리 + 0.6%)", value=False)
     effective_rate = rate + 0.6 if use_stress else rate
@@ -81,17 +81,17 @@ if page == "전세대출 계산기":
     if use_stress:
         st.markdown(f"내부 DSR 계산용 금리: **{effective_rate:.2f}%**")
 
-    # 희망 전세대출 월 예상 상환액
+    # 희망 전세대주 월 예상 상화액
     if ho > 0:
         ho_monthly = calculate_monthly_payment(ho, yrs, effective_rate, repay_type)
-        st.markdown(f"💵 희망 전세대출 월 예상 상환액: **{int(ho_monthly):,}원**")
+        st.markdown(f"💵 희망 전세대주 월 예상 상화액: **{int(ho_monthly):,}원**")
 
-    # 대출 금액을 자유롭게 입력하여 월 납입액 확인
+    # 대주 금액을 자유련게 입력하여 월 내입액 확인
     sample_amt = comma_number_input("예시 대출금액 (원)", "sample_amt", "500000000")
     example_monthly = calculate_monthly_payment(sample_amt, yrs, effective_rate, repay_type)
-    st.markdown(f"📌 예시 대출 {sample_amt:,}원 시 월 예상 상환액: **{int(example_monthly):,}원**")
+    st.markdown(f"📌 예시 대주 {sample_amt:,}원 시 월 예상 상화액: **{int(example_monthly):,}원**")
 
-    # 기존 대출 내역 입력
+    # 기존 대주 내역 입력
     num = st.number_input("기존 대출 건수", 0, 10, 0)
     existing_loans = []
     for i in range(num):
@@ -123,6 +123,10 @@ if page == "전세대출 계산기":
                        'product': prod, 'limit': lim, 'approved': ok}
         })
 
-    
-    
+# DSR 담보계산기 안내 문구 추가
+elif page == "DSR 담보계산기":
+    st.title("🏦 DSR 담보대출 계산기")
+    st.warning("이 기능은 현재 준비 중입니다.")
+
+ 
    
