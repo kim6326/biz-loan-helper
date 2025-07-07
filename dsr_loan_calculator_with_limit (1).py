@@ -21,9 +21,7 @@ def comma_number_input(label, key, value="0"):
 def calculate_monthly_payment(principal, annual_rate, years):
     if years <= 0: return 0
     mr = annual_rate / 100 / 12
-    n = years * 12
-    if mr == 0: return principal / n
-    return principal * mr * (1 + mr)**n / ((1 + mr)**n - 1)
+    return principal * mr
 
 def get_stress_multiplier(loan_type, fixed_years, total_years, cycle_level=None):
     if loan_type == "고정형": return 1.0
@@ -158,11 +156,11 @@ elif page == "전세대출 계산기":
     effective_rate = rate + 0.6 if use_stress else rate
 
     if ho > 0:
-        ho_monthly = calculate_monthly_payment(ho, effective_rate, yrs)
+        ho_monthly = ho * (effective_rate / 100) / 12
         st.markdown(f"💵 희망 대출 월 상환액: {int(ho_monthly):,}원")
 
     sample_amt = comma_number_input("예시 대출금액 (원)", "sample_amt", "500000000")
-    example_monthly = calculate_monthly_payment(sample_amt, effective_rate, yrs)
+    example_monthly = sample_amt * (effective_rate / 100) / 12
     st.markdown(f"📌 예시 {sample_amt:,}원 월 상환액: {int(example_monthly):,}원")
 
     if st.button("계산 전세"):
@@ -181,3 +179,7 @@ elif page == "내 이력":
             st.json(rec)
     else:
         st.info("이력이 없습니다.")
+
+
+   
+  
