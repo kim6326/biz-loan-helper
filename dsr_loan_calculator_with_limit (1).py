@@ -100,6 +100,34 @@ if page == "전세대출 계산기":
     org = st.selectbox("보증기관", ["HUG", "HF", "SGI"])
     rate = st.number_input("이자율 (%)", 0.0, 10.0, 3.5, 0.1)
     yrs = st.number_input("기간 (년)", 1, 30, 2)
+
+    # 스트레스 금리 옵션
+    use_stress = st.checkbox("📈 스트레스 금리 적용 (DSR 계산 시 +0.6%)")
+    effective_rate = rate + 0.6 if use_stress else rate
+    st.markdown(f"👤 고객 안내용 금리: **{rate:.2f}%**")
+    if use_stress:
+        st.markdown(f"📈 내부 DSR 계산용 스트레스 금리: **{effective_rate:.2f}%**")
+
+    # 생활안정자금 여부
+    st.markdown("---")
+    st.markdown("### 💼 생활안정자금 여부")
+    want_life = st.checkbox("생활안정자금 추가 신청")
+    if want_life:
+        st.info("ℹ️ 생활안정자금은 세입자 본인 계좌로 입금되며, 집주인 동의는 불필요합니다.")
+        life_region = st.selectbox("거주 지역 구분", ["수도권", "지방"], key="life_region_jeonse")
+        life_fh = st.checkbox("생애최초 여부", key="life_fh_jeonse")
+        base_limit = ho
+        # 생활안정 여유한도: 전세 한도에서 희망 대출 뺀 금액
+        total_limit = min(mp * 0.8, 500000000)
+        remaining = max(0, total_limit - ho)
+        st.markdown(f"💡 생활안정자금 가능 금액: **{int(remaining):,} 원**(전세 한도 내)")
+        life_years = st.number_input("생활안정자금 대출 기간 (년)", 1, 10, 3, key="life_years_jeonse")
+        life_rate = st.number_input("생활안정자금 금리 (%)", 0.0, 10.0, 4.13, key="life_rate_jeonse")
+        life_amount = st.number_input("신청할 생활안정자금 금액 (원)", 0, int(remaining), 0, step=1000000, key="life_amount_jeonse")
+        if life_amount > 0:
+            life_monthly = calculate_monthly_payment(life_amount, life_years, life_rate)
+            st.markdown(f"📆 생활안정자금 월 예상 상환액: **{int(life_monthly):,} 원**")
+
     num = st.number_input("기존 대출 건수", 0, 10, 0)
     existing_loans = []
     for i in range(num):
@@ -108,7 +136,23 @@ if page == "전세대출 계산기":
         rt = st.number_input(f"대출 {i+1} 이자율 (%)", 0.0, 10.0, 4.0, key=f"r{i}")
         rp = st.selectbox(f"상환방식 {i+1}", ["원리금균등", "원금균등", "만기일시"], key=f"rp{i}")
         existing_loans.append({"amount": amt, "period": pr, "rate": rt, "repay_type": rp})
+
     if st.button("계산"):        
+        curr = calculate_dsr(existing_loans, income)
+        est = calculate_dsr(existing_loans + [{"amount": ho, "period": yrs, "rate": effective_rate, "repay_type": "원리금균등"}], income)
+        prod, lim, ok = recommend_product(age, married, income, mp, ho, org)
+        st.markdown(f"현재 DSR: {curr:.2f}% / 예상 DSR: {est:.2f}%")
+        st.markdown(f"추천상품: {prod} / 한도: {lim:,}원 / 가능여부: {'가능' if ok else '불가'}")
+        # 이력 저장
+        st.session_state.history.append({
+            'type': '전세',
+            'time': datetime.now().strftime('%Y-%m-%d %H:%M'),
+            'inputs': {'age': age, 'income': income, 'mp': mp, 'je': je, 'ho': ho, 'org': org, 'rate': rate, 'yrs': yrs, 'stress': use_stress, 'life_amt': life_amount},
+            'result': {'current_dsr': curr, 'estimated_dsr': est, 'product': prod, 'limit': lim, 'approved': ok}
+        })
+
+if page == "DSR 담보계산기":
+    # 기존 DSR 담보 계산기 코드 계속...("계산"):        
         curr = calculate_dsr(existing_loans, income)
         est = calculate_dsr(existing_loans + [{"amount": ho, "period": yrs, "rate": rate, "repay_type": "원리금균등"}], income)
         prod, lim, ok = recommend_product(age, married, income, mp, ho, org)
@@ -162,24 +206,8 @@ elif page == "DSR 담보계산기":
     st.markdown(f"고객 금리: {nr:.2f}%")
     if use_stress:
         st.markdown(f"스트레스 금리: {er:.2f}%")
-    want = st.checkbox("생활자금 신청")
-    if want:
-        st.info("ℹ️ 생활안정자금은 세입자 본인 계좌로 입금되며, 집주인 동의가 필요하지 않습니다.")
-        rl = st.selectbox("생활자금 지역 구분", ["수도권", "지방"], key="rl2")
-        mh = st.radio("주택 수", ["1주택", "다주택"], horizontal=True)
-        if mh == "다주택":
-            st.warning("다주택자는 제한됩니다.")
-        else:
-            bl = 100000000 if rl == "수도권" else int(price * ltv)
-            rem = max(0, bl - na)
-            if rem > 0:
-                st.markdown(f"잔여 한도: {rem:,}원")
-                ly = st.number_input("생활자금 기간(년)", 1, 10, 3, key="ly2")
-                lr = st.number_input("생활자금 이율(%)", 0.0, 10.0, 4.13, key="lr2")
-                la = st.number_input("신청 금액 (원)", 0, rem, 0, 1000000, key="la2")
-                if la > 0:
-                    m = calculate_monthly_payment(la, ly, lr)
-                    st.markdown(f"월 상환액: {int(m):,}원")
+    # 생활안정자금 신청 기능은 전세대출 계산기에만 적용됩니다.
+    # DSR 담보계산기에서는 생략합니다.
     if st.button("계산2"):
         exist = sum(calculate_monthly_payment(loan['amount'], loan['years'], loan['rate']) for loan in existing_collateral_loans)
         dsr_limit = income2 / 12 * 0.4
@@ -210,7 +238,5 @@ else:
     else:
         st.info("아직 계산 이력이 없습니다.")
 
-
-
-
-
+    
+  
