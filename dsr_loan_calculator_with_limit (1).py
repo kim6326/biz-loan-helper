@@ -122,3 +122,7 @@ if page == "전세대출 계산기":
             'result': {'current_dsr': curr, 'estimated_dsr': est,
                        'product': prod, 'limit': lim, 'approved': ok}
         })
+
+    
+    
+   
