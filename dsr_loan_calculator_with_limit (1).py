@@ -172,18 +172,10 @@ if page == "전세대출 계산기":
                        'life_amount': life_amount},
             'result': {'current_dsr': curr, 'estimated_dsr': est,
                        'product': prod, 'limit': lim, 'approved': ok}
-        })        st.session_state.history.append({
-            'type': '전세',
-            'time': datetime.now().strftime('%Y-%m-%d %H:%M'),
-            'inputs': {'age': age, 'income': income, 'market_price': mp,
-                       'jeonse_deposit': je, 'hope_loan': ho, 'org': org,
-                       'rate': rate, 'years': yrs, 'stress': use_stress,
-                       'life_amount': life_amount},
-            'result': {'current_dsr': curr, 'estimated_dsr': est,
-                       'product': prod, 'limit': lim, 'approved': ok}
         })
 
 # DSR 담보계산기 및 내 이력 페이지는 이하 생략...
 
-   
-  
+      
+ 
+ 
