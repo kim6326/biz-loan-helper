@@ -151,21 +151,6 @@ if page == "전세대출 계산기":
             'result': {'current_dsr': curr, 'estimated_dsr': est, 'product': prod, 'limit': lim, 'approved': ok}
         })
 
-if page == "DSR 담보계산기":
-    # 기존 DSR 담보 계산기 코드 계속...("계산"):        
-        curr = calculate_dsr(existing_loans, income)
-        est = calculate_dsr(existing_loans + [{"amount": ho, "period": yrs, "rate": rate, "repay_type": "원리금균등"}], income)
-        prod, lim, ok = recommend_product(age, married, income, mp, ho, org)
-        st.markdown(f"현재 DSR: {curr:.2f}% / 예상 DSR: {est:.2f}%")
-        st.markdown(f"추천상품: {prod} / 한도: {lim:,}원 / 가능여부: {'가능' if ok else '불가'}")
-        # 이력 저장
-        st.session_state.history.append({
-            'type': '전세',
-            'time': datetime.now().strftime('%Y-%m-%d %H:%M'),
-            'inputs': {'age': age, 'income': income, 'market_price': mp, 'jeonse': je, 'hope_loan': ho, 'org': org, 'rate': rate, 'years': yrs},
-            'result': {'current_dsr': curr, 'estimated_dsr': est, 'product': prod, 'limit': lim, 'approved': ok}
-        })
-
 # DSR 담보계산기
 elif page == "DSR 담보계산기":
     st.title("🏦 DSR 담보계산기 (스트레스 감면 포함)")
@@ -248,6 +233,9 @@ else:
             st.json(record)
     else:
         st.info("아직 계산 이력이 없습니다.")
+
+
+
 
 
  
