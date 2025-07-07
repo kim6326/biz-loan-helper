@@ -58,7 +58,7 @@ if 'history' not in st.session_state:
     st.session_state.history = []
 
 # 사이드바 메뉴
-page = st.sidebar.selectbox("계산기 선택", ["전세대출 계산기", "DSR 담보계산기", "내 이력"])
+page = st.sidebar.selectbox("계산기 선택", ["전세대출 계산기", "DSR 담보대출 계산기", "내 이력"])
 
 # 전세대출 계산기
 if page == "전세대출 계산기":
@@ -102,8 +102,8 @@ if page == "전세대출 계산기":
             'result':{'current_dsr':curr,'estimated_dsr':est,'product':prod,'limit':lim,'approved':ok}
         })
 
-# DSR 담보계산기 화면
-elif page == "DSR 담보계산기":
+# DSR 담보대출 계산기 화면
+elif page == "DSR 담보대출 계산기":
     st.title("🏦 DSR 담보대출 계산기")
     annual_income = comma_number_input("연소득 (만원)", "dsr_income", "6000") * 10000
     region = st.selectbox("지역", list(LTV_MAP.keys()), key="dsr_region")
@@ -148,3 +148,5 @@ else:
             st.json(record)
     else:
         st.info("아직 계산 이력이 없습니다.")
+
+ 
