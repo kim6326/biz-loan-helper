@@ -179,53 +179,64 @@ elif page == "DSR 담보계산기":
         ltv = 0.7
     else:
         ltv = LTV_MAP[region]
+
     price = comma_number_input("시세(원)", "mp2")
     st.markdown(f"시세: {price:,}원 | LTV: {ltv*100:.1f}%")
-    # 기존 대출
+
+    # 기존 담보 대출 내역
     existing_collateral_loans = []
-    n2 = st.number_input("기존 건수", 0, 10, 0)
+    n2 = st.number_input("기존 대출 건수", 0, 10, 0)
     for i in range(n2):
         a = comma_number_input(f"기존 {i+1} 금액 (원)", f"ba{i}")
         r = st.number_input(f"기존 {i+1} 이율 (%)", 0.0, 10.0, key=f"br{i}")
         y = st.number_input(f"기존 {i+1} 기간(년)", 1, 40, key=f"by{i}")
         existing_collateral_loans.append({"amount": a, "rate": r, "years": y})
-    lt = st.selectbox("유형", ["고정형", "혼합형", "변동형", "주기형"])
+
+    lt = st.selectbox("상품 유형", ["고정형", "혼합형", "변동형", "주기형"])
     fy = 0
     if lt == "혼합형":
-        fy = st.number_input("고정년수", 0, 100, 5, key="fix2")
-    ty = st.number_input("총년수", 1, 100, 30, key="tot2")
+        fy = st.number_input("고정금리 기간(년)", 0, 100, 5, key="fix2")
+    ty = st.number_input("총 대출 기간(년)", 1, 100, 30, key="tot2")
+
     cl = None
     if lt == "주기형":
-        cm = st.number_input("주기(월)", 1, 120, 12, key="cm2")
+        cm = st.number_input("주기(개월)", 1, 120, 12, key="cm2")
         cl = "1단계" if cm >= 12 else "2단계" if cm >= 6 else "3단계"
         st.info(f"주기형 {cm}개월 → {cl}")
+
     nr = st.number_input("신규 이율 (%)", 0.0, 10.0, 4.7, 0.01, key="nr2")
-    na = comma_number_input("신규 금액 (원)", "na2")
-    use_stress = st.checkbox("스트레스 적용 (+0.6%)")
-    er = nr + 0.6 if use_stress else nr
+    na = comma_number_input("신규 대출 금액 (원)", "na2")
+    use_stress2 = st.checkbox("스트레스 금리 적용 (+0.6%)")
+    er2 = nr + 0.6 if use_stress2 else nr
     st.markdown(f"고객 금리: {nr:.2f}%")
-    if use_stress:
-        st.markdown(f"스트레스 금리: {er:.2f}%")
-    # 생활안정자금 신청 기능은 전세대출 계산기에만 적용됩니다.
-    # DSR 담보계산기에서는 생략합니다.
-    if st.button("계산2"):
+    if use_stress2:
+        st.markdown(f"스트레스 금리: {er2:.2f}%")
+
+    if st.button("계산(D?)"):
+        # DSR 한도 및 월 상환액 계산
         exist = sum(calculate_monthly_payment(loan['amount'], loan['years'], loan['rate']) for loan in existing_collateral_loans)
         dsr_limit = income2 / 12 * 0.4
         available = dsr_limit - exist
-        new_monthly = calculate_monthly_payment(na, ty, er)
+        new_payment = calculate_monthly_payment(na, ty, er2)
         cap = min(price * ltv, 600_000_000 if fh else int(price * ltv))
-        st.write(f"기존 상환: {exist:,.0f}원 | 여유 상환: {available:,.0f}원 | 신규 상환: {new_monthly:,.0f}원 | LTV 한도: {cap:,.0f}원")
-        ok2 = na <= cap and new_monthly <= available
-        if ok2:
-            st.success("✅ 신규 대출 가능")
+
+        st.write(f"기존 월 상환액: {exist:,.0f}원")
+        st.write(f"DSR 한도(월): {dsr_limit:,.0f}원 | 여유 상환액: {available:,.0f}원")
+        st.write(f"신규 월 상환액: {new_payment:,.0f}원")
+        st.write(f"LTV 한도: {cap:,.0f}원")
+
+        approved2 = na <= cap and new_payment <= available
+        if approved2:
+            st.success("✅ 신규 담보대출 가능")
         else:
-            st.error("❌ 신규 대출 불가")
+            st.error("❌ 신규 담보대출 불가")
+
         # 이력 저장
         st.session_state.history.append({
             'type': '담보',
             'time': datetime.now().strftime('%Y-%m-%d %H:%M'),
-            'inputs': {'income': income2, 'region': region, 'ltv': ltv, 'price': price, 'new_amount': na, 'rate': nr, 'years': ty, 'stress': use_stress},
-            'result': {'available': available, 'new_monthly': new_monthly, 'limit': cap, 'approved': ok2}
+            'inputs': {'income': income2, 'region': region, 'ltv': ltv, 'price': price, 'new_amount': na, 'rate': nr, 'years': ty, 'stress': use_stress2},
+            'result': {'available': available, 'new_payment': new_payment, 'limit': cap, 'approved': approved2}
         })
 
 # 내 이력 페이지
@@ -238,5 +249,6 @@ else:
     else:
         st.info("아직 계산 이력이 없습니다.")
 
-    
-  
+
+ 
+ 
