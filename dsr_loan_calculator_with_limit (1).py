@@ -111,7 +111,7 @@ elif page == "DSR 담보계산기":
     first_home = st.checkbox("생애최초 주택 구입 여부", key="dsr_first")
     use_custom_ltv = st.checkbox("LTV 수동 입력", key="dsr_ltv_chk")
     if use_custom_ltv:
-        ltv_ratio = st.number_input("직접 LTV (%)",0.0,100.0,70.0,0.1,key="dsr_ltv"){}/100
+        ltv_ratio = st.number_input("직접 LTV (%)", 0.0, 100.0, 70.0, 0.1, key="dsr_ltv") / 100
     elif first_home:
         ltv_ratio = 0.7
     else:
