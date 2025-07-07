@@ -90,33 +90,18 @@ if page == "전세대출 계산기":
     # 사용자 입력
     age = st.number_input("나이", 19, 70, 32)
     married = st.radio("결혼 여부", ["미혼", "결혼"]) == "결혼"
-    raw_income = st.text_input("연소득 (만원)", "6000")
-    try:
-        income = int(raw_income.replace(',', '')) * 10000
-    except:
-        income = 0
-        st.error("연소득은 숫자로 입력해주세요.")
-    raw_mp = st.text_input("아파트 시세 (원)", "500000000")
-    try:
-        mp = int(raw_mp.replace(',', ''))
-    except:
-        mp = 0
-        st.error("시세는 숫자로 입력해주세요.")
-    raw_je = st.text_input("전세 보증금 (원)", "450000000")
-    try:
-        je = int(raw_je.replace(',', ''))
-    except:
-        je = 0
-        st.error("전세금은 숫자로 입력해주세요.")
-    raw_ho = st.text_input("희망 대출 금액 (원)", "300000000")
-    try:
-        ho = int(raw_ho.replace(',', ''))
-    except:
-        ho = 0
-        st.error("대출 금액은 숫자로 입력해주세요.")
+    # 연소득 입력 (만원)
+    income_man = comma_number_input("연소득 (만원)", "income_man", "6000")
+    income = income_man * 10000
+    # 아파트 시세 입력
+    mp = comma_number_input("아파트 시세 (원)", "mp_input", "500000000")
+    # 전세 보증금 입력
+    je = comma_number_input("전세 보증금 (원)", "je_input", "450000000")
+    # 희망 대출 금액 입력
+    ho = comma_number_input("희망 대출 금액 (원)", "ho_input", "300000000")
     org = st.selectbox("보증기관", ["HUG", "HF", "SGI"])
     rate = st.number_input("이자율 (%)", 0.0, 10.0, 3.5, 0.1)
-    yrs = st.number_input("기간 (년)", 1, 30, 2)
+    yrs = st.number_input("기간 (년)", 1, 30, 2)("기간 (년)", 1, 30, 2)
 
     # 스트레스 금리 옵션
     use_stress = st.checkbox("📈 스트레스 금리 적용 (+0.6%)")
@@ -289,3 +274,5 @@ else:
             st.json(record)
     else:
         st.info("아직 계산 이력이 없습니다.")
+
+ 
