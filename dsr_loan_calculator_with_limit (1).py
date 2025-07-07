@@ -148,5 +148,3 @@ else:
             st.json(record)
     else:
         st.info("아직 계산 이력이 없습니다.")
-
- 
