@@ -101,7 +101,7 @@ if page == "전세대출 계산기":
     ho = comma_number_input("희망 대출 금액 (원)", "ho_input", "300000000")
     org = st.selectbox("보증기관", ["HUG", "HF", "SGI"])
     rate = st.number_input("이자율 (%)", 0.0, 10.0, 3.5, 0.1)
-    yrs = st.number_input("기간 (년)", 1, 30, 2)("기간 (년)", 1, 30, 2)
+    yrs = st.number_input("기간 (년)", 1, 30, 2)
 
     # 스트레스 금리 옵션
     use_stress = st.checkbox("📈 스트레스 금리 적용 (+0.6%)")
@@ -274,5 +274,7 @@ else:
             st.json(record)
     else:
         st.info("아직 계산 이력이 없습니다.")
+
+ 
 
  
