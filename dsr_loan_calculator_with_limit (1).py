@@ -101,7 +101,7 @@ if page == "전세대출 계산기":
         burden_pct = (annual_interest + annual_fee) / income * 100
         ok = base_ok and (burden_pct <= 40)
 
-                # 결과 항상 출력 및 디버깅 정보
+        # 결과 항상 출력 및 디버깅 정보
         st.markdown(f"추천상품: {prod}")
         st.markdown(f"한도: {int(lim):,}원")
         st.markdown(f"상환가능여부: {'✅ 가능' if ok else '❌ 불가'}")
@@ -113,7 +113,7 @@ if page == "전세대출 계산기":
         # 디버깅용
         st.write(f"DEBUG → base_ok: {base_ok}, burden_check: {burden_pct <= 40}")
 
-        st.session_state.history.append({.history.append({
+        st.session_state.history.append({
             'time': datetime.now().strftime('%Y-%m-%d %H:%M'),
             'type': '전세',
             'result': {'limit': lim, 'approved': ok, 'burden_pct': burden_pct}
@@ -199,5 +199,6 @@ else:
             st.json(record['result'])
     else:
         st.info("아직 계산 이력이 없습니다.")
+
 
 
