@@ -165,7 +165,8 @@ elif page == "DSR 담보대출 계산기":
         cap = min(property_price * ltv_ratio, 600_000_000 if first_home else property_price * ltv_ratio)
         st.write(f"기존 월 상환:{exist_mon:,.0f}원/DSR한도:{dsr_lim:,.0f}원/여유:{avail:,.0f}원")
         st.write(f"신규 월 상환:{new_mon:,.0f}원/LTV한도:{cap:,.0f}원")
-        # 최대 신규 대출 가능금액
+                        # 최대 신규 대출 가능금액 계산 (DSR 기준)
+        # 조정금리(adj)에 기반해 DSR 한도를 월 상환액 식으로 역산
         if adj > 0:
             max_dsr = avail * 12 / (adj / 100)
         else:
@@ -190,3 +191,5 @@ else:
     else:
         st.info("아직 계산 이력이 없습니다.")
 
+ 
+     
