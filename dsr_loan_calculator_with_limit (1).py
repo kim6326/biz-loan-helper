@@ -194,8 +194,13 @@ elif page == "전세대출 계산기":
         # 자동 역산: 최대 허용 월 상환액 기준으로 가능한 대출금 역산
         max_monthly = income / 12 * DSR_RATIO - sum(calculate_monthly_payment(l["amount"], l["rate"], l["years"], l["repay_type"]) for l in existing_loans)
         if effective_rate > 0 and yrs > 0:
-            max_loan_possible = max_monthly / (effective_rate / 100 / 12)
-            st.markdown(f"📈 역산 최대 대출 가능 금액(만기일시 기준): **{int(max_loan_possible):,}원**")
+            realistic_limit = min(
+                max_monthly / (effective_rate / 100 / 12),  # DSR 한도 기반 계산
+                je * 0.8,  # 전세보증금의 80% 제한
+                500_000_000  # 보증기관 최대 한도 가정 (SGI 기준)
+            )
+            st.markdown(f"📈 역산 최대 대출 가능 금액(현실 적용 기준): **{int(realistic_limit):,}원**")
+            st.caption("※ 보증금 80% 한도 및 보증기관 최대 5억원 기준 제한 적용")
         curr = sum(calculate_monthly_payment(l["amount"], l["rate"], l["years"], l["repay_type"]) for l in existing_loans)
         est = curr + calculate_monthly_payment(ho, effective_rate, yrs, repay_type)
         limit = income / 12 * DSR_RATIO
@@ -219,10 +224,4 @@ elif page == "내 계산 이력":
     else:
         st.info("아직 계산 이력이 없습니다.")
 
-   
-     
-
-     
-   
-
-  
+    
