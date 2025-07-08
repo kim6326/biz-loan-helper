@@ -188,7 +188,7 @@ elif page == "DSR 담보대출 계산기":
     cnt2 = st.number_input("기존 대출 건수", 0, 10, 0, key="dsr_cnt")
     for i in range(cnt2):
         amt2 = comma_number_input(f"대출 {i+1} 금액", f"dsr_amt{i}")
-        yr2 = st.number_input(f"기간(년)", 1, 40, 10, key
+                yr2 = st.number_input(f"기간(년)", 1, 40, 10, key=f"dsr_yr{i}")
 
 
    
