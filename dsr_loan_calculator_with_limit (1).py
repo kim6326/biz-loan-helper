@@ -123,7 +123,7 @@ if page == "전세대출 계산기":
     for i in range(cnt):
         amt = comma_number_input(f"대출 {i+1} 금액", f"je_amt{i}")
         pr = st.number_input(f"기간(년)", 1, 40, 10, key=f"je_pr{i}")
-        rt = st.number_input(f"이율(%)", 0.0, 10.0, 4.0, key=f"je_rt{i}")
+        rt = st.number_input(f"이율(%)", 0.0, 100.0, 4.0, key=f"je_rt{i}")
         rp = st.selectbox(f"상환방식", ["원리금균등", "원금균등", "만기일시"], key=f"je_rp{i}")
         existing_loans.append({"amount": amt, "rate": rt, "years": pr, "repay_type": rp})
 
@@ -165,7 +165,7 @@ elif page == "DSR 담보대출 계산기":
     for i in range(cnt2):
         amt2 = comma_number_input(f"대출 {i+1} 금액", f"dsr_amt{i}")
         yr2 = st.number_input(f"기간(년)", 1, 40, 10, key=f"dsr_yr{i}")
-        rt2 = st.number_input(f"이율(%)", 0.0, 10.0, 4.0, key=f"dsr_rt{i}")
+        rt2 = st.number_input(f"이율(%)", 0.0, 100.0, 4.0, key=f"dsr_rt{i}")
         existing_loans.append({"amount": amt2, "rate": rt2, "years": yr2, "repay_type": "만기일시"})
 
     st.subheader("신규 대출 조건")
