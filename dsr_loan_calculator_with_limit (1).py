@@ -145,15 +145,80 @@ if page == "전세대출 계산기":
 
 elif page == "DSR 담보대출 계산기":
     st.title("🏦 DSR 담보대출 계산기")
-        # 연소득 입력 (만원 단위)
+    # 연소득 입력 (만원 단위)
     income_man = comma_number_input("연소득 (만원)", "di", "6000")
     income = income_man * 10000
-    region = st.selectbox("지역", list(LTV_MAP.keys()))("지역", list(LTV_MAP.keys()))
+    region = st.selectbox("지역", list(LTV_MAP.keys()))
     first_home = st.checkbox("생애최초 구매 여부")
     custom_ltv = st.checkbox("직접 LTV 입력")
     if custom_ltv:
         ltv = st.number_input("LTV (%)", 0.0, 100.0, 70.0, 0.1) / 100
     else:
+        ltv = 0.7 if first_home else LTV_MAP[region]
+
+    price = comma_number_input("시세 (원)", "dp", "500000000")
+    st.markdown(f"▶ 시세: {price:,}원 | LTV: {ltv*100:.1f}%")
+
+    st.subheader("기존 대출 내역")
+    existing_loans = []
+    cnt2 = st.number_input("기존 대출 건수", 0, 10, 0)
+    for i in range(cnt2):
+        amt2 = comma_number_input(f"대출 {i+1} 금액", f"da{i}")
+        per2 = st.number_input(f"기간(년) {i+1}", 1, 40, 10, key=f"per2{i}")
+        rt2 = st.number_input(f"이율(%) {i+1}", 0.0, 100.0, 4.0, key=f"rt2{i}")
+        rp2 = st.selectbox(f"상환방식 {i+1}", ["원리금균등", "원금균등", "만기일시"], key=f"rp2{i}")
+        existing_loans.append({"amount": amt2, "rate": rt2, "years": per2, "repay_type": rp2})
+
+    st.subheader("신규 대출 조건")
+    loan_type = st.selectbox("대출 유형", ["고정형", "혼합형", "변동형", "주기형"])
+    fixed_years = 0
+    if loan_type == "혼합형":
+        fixed_years = st.number_input("↳ 고정금리 기간 (년)", 0, 100, 5)
+    total_years = st.number_input("↳ 총 대출 기간 (년)", 1, 100, 30)
+
+    cycle_level = None
+    if loan_type == "주기형":
+        cycle_mon = st.number_input("↳ 금리 리셋 주기 (개월)", 1, 120, 12)
+        if cycle_mon >= 12:
+            cycle_level = "1단계"
+        elif cycle_mon >= 6:
+            cycle_level = "2단계"
+        else:
+            cycle_level = "3단계"
+        st.info(f"주기형: {cycle_mon}개월 → {cycle_level}")
+
+    new_rate = st.number_input("신규 금리 (%)", 0.0, 100.0, 4.7, 0.1)
+    new_amount = comma_number_input("신규 대출 금액 (원)", "na", "300000000")
+
+    if st.button("계산2"):
+        exist_monthly = sum(
+            calculate_monthly_payment(l['amount'], l['rate'], l['years'], l['repay_type'])
+            for l in existing_loans
+        )
+        dsr_limit = income / 12 * DSR_RATIO
+        available = dsr_limit - exist_monthly
+
+        mult = get_stress_multiplier(loan_type, fixed_years, total_years, cycle_level)
+        stress_rate = new_rate * mult
+        discount = 1.5 if region in ["서울", "경기", "인천"] else 0.75
+        adjusted_rate = stress_rate - discount
+
+        new_monthly = calculate_monthly_payment(new_amount, adjusted_rate, total_years, "만기일시")
+        cap = min(price * ltv, 600_000_000 if first_home else price * ltv)
+
+        st.write(f"기존 월 상환: {exist_monthly:,.0f}원")
+        st.write(f"DSR 한도: {dsr_limit:,.0f}원")
+        st.write(f"여유 상환: {available:,.0f}원")
+        st.write(f"신규 월 상환: {new_monthly:,.0f}원")
+        st.write(f"LTV 한도: {ltv*100:.1f}% → {cap:,.0f}원")
+
+        if new_amount <= cap and new_monthly <= available:
+            st.success("✅ 신규 대출 가능")
+        else:
+            st.error("❌ 신규 대출 불가")
+
+else:
+
         ltv = 0.7 if first_home else LTV_MAP[region]
 
     price = comma_number_input("시세 (원)", "dp", "500000000")
@@ -224,6 +289,10 @@ else:
             st.json(record['result'])
     else:
         st.info("아직 계산 이력이 없습니다.")
+
+
+   
+   
 
   
        
