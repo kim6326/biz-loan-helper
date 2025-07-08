@@ -95,14 +95,16 @@ if page == "전세대출 계산기":
     st.markdown(f"💵 희망 월상환: {int(calculate_monthly_payment(hope,eff_rate,yrs,'만기일시')):,}원")
 
     st.subheader("기존 대출")
-    ex_loans=[]
-    for i in range(st.number_input("건수",0,10,0,key='cnt')):
-        a=comma_number_input(f"금액{i}",f"a{i}")
-        y=st.number_input(f"기간{i}",1,40,10,key=f"y{i}")
-        r=st.number_input(f"이율{i}",0.0,100.0,4.0,key=f"r{i}")
-        ex_loans.append({'amount':a,'rate':r,'years':y,'repay_type':'만기일시'})
+    ex_loans = []
+    cnt = st.number_input("기존 대출 건수", 0, 10, 0, key='cnt')
+    for i in range(cnt):
+        a = comma_number_input(f"대출 {i+1} 금액", f"a{i}")
+        y = st.number_input(f"기간(년) {i+1}", 1, 40, 10, key=f"y{i}")
+        r = st.number_input(f"이율(%) {i+1}", 0.0, 100.0, 4.0, key=f"r{i}")
+        rp = st.selectbox(f"상환방식 {i+1}", ["원리금균등", "원금균등", "만기일시"], key=f"rp{i}")
+        ex_loans.append({'amount': a, 'rate': r, 'years': y, 'repay_type': rp})
 
-    if st.button("계산"): 
+    if st.button("계산"): ("계산"): 
         prod,lim,ok= recommend_product(age,married,income,mp,je,hope,org)
         fr=FEE_RATES[org]
         ai=hope*eff_rate/100
@@ -167,7 +169,4 @@ else:
     else:
         st.info("이력 없음.")
 
-
-
  
-  
