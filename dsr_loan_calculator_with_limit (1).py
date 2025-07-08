@@ -219,8 +219,18 @@ elif page == "DSR 담보대출 계산기":
         st.info(f"✨ 최대 신규 대출 가능금액(DSR/LTV 기준): {int(max_loan):,}원")
         if new_amount <= cap2 and new_mon2 <= avail:
             st.success("✅ 신규 대출 가능")
+            st.session_state.history.append({
+                'type':'담보','time':datetime.now().strftime('%Y-%m-%d %H:%M'),
+                'inputs':{'annual_income':annual_income,'region':region,'ltv_ratio':ltv_ratio,'price':price,'loan_type':loan_type,'fixed_years':fixed_years,'total_years':total_years,'new_rate':new_rate,'new_amount':new_amount},
+                'result':{'existing_monthly':exist_mon2,'dsr_limit':dsr_lim,'available':avail,'new_monthly':new_mon2,'cap':cap2,'approved':True}
+            })
         else:
             st.error("❌ 신규 대출 불가능")
+            st.session_state.history.append({
+                'type':'담보','time':datetime.now().strftime('%Y-%m-%d %H:%M'),
+                'inputs':{'annual_income':annual_income,'region':region,'ltv_ratio':ltv_ratio,'price':price,'loan_type':loan_type,'fixed_years':fixed_years,'total_years':total_years,'new_rate':new_rate,'new_amount':new_amount},
+                'result':{'existing_monthly':exist_mon2,'dsr_limit':dsr_lim,'available':avail,'new_monthly':new_mon2,'cap':cap2,'approved':False}
+            })
 # 내 계산 이력
 else:
     st.title("⏳ 내 계산 이력")
@@ -232,5 +242,4 @@ else:
         st.info("아직 계산 이력이 없습니다.")
 
   
-      
-  
+     
