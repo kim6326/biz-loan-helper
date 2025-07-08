@@ -161,7 +161,7 @@ elif page == "전세대출 계산기":
     je = comma_number_input("전세 보증금 (원)", "je_input", "450000000")
     ho = comma_number_input("희망 대출 금액 (원)", "ho_input", "300000000")
     org = st.selectbox("보증기관", ["HUG", "HF", "SGI"])
-    rate = st.number_input("이자율 (%)", 0.0, 10.0, 3.5, 0.1)
+    rate = st.number_input("이자율 (%)", 0.0, 100.0, 3.5, 0.1)
     yrs = st.number_input("기간 (년)", 1, 30, 2)
     repay_type = "만기일시"
     use_stress = st.checkbox("스트레스 금리 적용 (금리 +0.6%)")
@@ -181,7 +181,7 @@ elif page == "전세대출 계산기":
     for i in range(cnt):
         amt = comma_number_input(f"대출 {i+1} 금액", f"je_amt{i}")
         pr = st.number_input(f"기간(년)", 1, 40, 10, key=f"je_pr{i}")
-        rt = st.number_input(f"이율(%)", 0.0, 10.0, 4.0, key=f"je_rt{i}")
+        rt = st.number_input(f"이율(%)", 0.0, 100.0, 4.0, key=f"je_rt{i}")
         rp = st.selectbox(f"상환방식", ["원리금균등", "원금균등", "만기일시"], key=f"je_rp{i}")
         existing_loans.append({"amount": amt, "rate": rt, "years": pr, "repay_type": rp})
 
