@@ -36,20 +36,41 @@ def calculate_monthly_payment(principal, rate, years, repay_type="원리금균�
     return 0
 
 # 전세대출 상품 추천 함수
-def recommend_product(age, married, income, market_price, jeonse_price, hope, org):
-    max_limit = min(jeonse_price, market_price * 0.8)
-    if age <= 34 and income <= 70000000:
-        lim = 200_000_000 if org == "HUG" else 100_000_000
-        prod = "청년 전세자금대출"
-    elif married and income <= 80000000:
-        lim = 240_000_000
-        prod = "신혼부부 전세자금대출"
-    else:
-        lim = 500_000_000
-        prod = "일반 전세자금대출"
-    return prod, min(max_limit, lim), hope <= min(max_limit, lim)
-
-# 보증료율 설정 (전세대출 금융비용 부담 계산용)
+"
+"def recommend_product(age, married, income, market_price, jeonse_price, hope, org):
+"
+"    max_limit = min(jeonse_price, market_price * 0.8)
+"
+"    # 기관별 한도 설정
+"
+"    if age <= 34 and income <= 70000000:
+"
+"        limit = 200_000_000 if org == "HUG" else 100_000_000
+"
+"        prod = "청년 전세자금대출"
+"
+"        elif married and income <= 80000000:
+"
+"        limit = 240_000_000
+"
+"        prod = "신혼부부 전세자금대출"
+"
+"    else:
+"
+"        limit = 500_000_000
+"
+"        prod = "일반 전세자금대출"
+"
+"    # 실제 적용 한도
+"
+"    applied_limit = min(max_limit, limit)
+"
+"    approved = hope <= applied_limit
+"
+"    return prod, applied_limit, approved
+"
+"
+# 보증료율 설정 (전세대출 금융비용 부담 계산용) (전세대출 금융비용 부담 계산용)
 FEE_RATES = {
     "HUG": {"loan": 0.0005, "deposit": 0.00128},
     "HF": {"loan": 0.0004, "deposit": 0.0},
@@ -201,4 +222,4 @@ else:
         st.info("아직 계산 이력이 없습니다.")
 
 
-
+  
