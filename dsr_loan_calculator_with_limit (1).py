@@ -147,6 +147,7 @@ elif page == "DSR 담보대출 계산기":
     st.title("🏦 DSR 담보대출 계산기")
     # 연소득 입력 (원 단위)
     income = comma_number_input("연소득 (원)", "di", "60000000")
+    # 지역 및 LTV 설정
     region = st.selectbox("지역", list(LTV_MAP.keys()))
     first_home = st.checkbox("생애최초 구매 여부")
     custom_ltv = st.checkbox("직접 LTV 입력")
@@ -155,9 +156,11 @@ elif page == "DSR 담보대출 계산기":
     else:
         ltv = 0.7 if first_home else LTV_MAP[region]
 
-        price = comma_number_input("시세 (원)", "dp", "500000000") (원)", "dp", "500000000")
+    # 시세 입력 및 표시
+    price = comma_number_input("시세 (원)", "dp", "500000000")
     st.markdown(f"▶ 시세: {price:,}원 | LTV: {ltv*100:.1f}%")
 
+    # 기존 대출 내역 입력
     st.subheader("기존 대출 내역")
     existing_loans = []
     cnt2 = st.number_input("기존 대출 건수", 0, 10, 0)
@@ -168,6 +171,7 @@ elif page == "DSR 담보대출 계산기":
         rp2 = st.selectbox(f"상환방식 {i+1}", ["원리금균등", "원금균등", "만기일시"], key=f"rp2{i}")
         existing_loans.append({"amount": amt2, "rate": rt2, "years": per2, "repay_type": rp2})
 
+    # 신규 대출 조건 입력
     st.subheader("신규 대출 조건")
     loan_type = st.selectbox("대출 유형", ["고정형", "혼합형", "변동형", "주기형"])
     fixed_years = 0
@@ -189,22 +193,28 @@ elif page == "DSR 담보대출 계산기":
     new_rate = st.number_input("신규 금리 (%)", 0.0, 100.0, 4.7, 0.1)
     new_amount = comma_number_input("신규 대출 금액 (원)", "na", "300000000")
 
+    # 계산 실행
     if st.button("계산2"):
+        # 기존 월 평균 상환액
         exist_monthly = sum(
             calculate_monthly_payment(l['amount'], l['rate'], l['years'], l['repay_type'])
             for l in existing_loans
         )
+        # DSR 한도 계산
         dsr_limit = income / 12 * DSR_RATIO
         available = dsr_limit - exist_monthly
 
+        # 스트레스 금리 및 조정
         mult = get_stress_multiplier(loan_type, fixed_years, total_years, cycle_level)
         stress_rate = new_rate * mult
         discount = 1.5 if region in ["서울", "경기", "인천"] else 0.75
         adjusted_rate = stress_rate - discount
 
+        # 신규 월 상환액 및 LTV 한도
         new_monthly = calculate_monthly_payment(new_amount, adjusted_rate, total_years, "만기일시")
         cap = min(price * ltv, 600_000_000 if first_home else price * ltv)
 
+        # 결과 출력
         st.write(f"기존 월 상환: {exist_monthly:,.0f}원")
         st.write(f"DSR 한도: {dsr_limit:,.0f}원")
         st.write(f"여유 상환: {available:,.0f}원")
@@ -225,6 +235,14 @@ else:
             st.json(record['result'])
     else:
         st.info("아직 계산 이력이 없습니다.")
+else:
+    st.title("⏳ 내 계산 이력")
+    if st.session_state.history:
+        for record in st.session_state.history:
+            st.markdown(f"**[{record['time']}] {record['type']}**")
+            st.json(record['result'])
+    else:
+        st.info("아직 계산 이력이 없습니다.")
 
-   
-      
+ 
+     
