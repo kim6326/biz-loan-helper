@@ -53,12 +53,27 @@ def recommend_product(age, married, income, market_price, jeonse_price, hope, or
     approved = hope <= applied_limit
     return prod, applied_limit, approved
 
+# 스트레스 배율 함수 (DSR 담보대출용)
+def get_stress_multiplier(loan_type, fixed_years, total_years, cycle_level=None):
+    if loan_type == "고정형":
+        return 1.0
+    if loan_type == "변동형":
+        return 2.0
+    if loan_type == "혼합형":
+        if total_years > 0:
+            ratio = fixed_years / total_years
+            if ratio >= 0.8:
+                return 1.0
+            if ratio >= 0.6:
+                return 1.4
+            if ratio >= 0.4:
+                return 1.8
+        return 2.0
+    if loan_type == "주기형" and cycle_level:
+        return {"1단계":1.4, "2단계":1.3, "3단계":1.2}[cycle_level]
+    return 1.0
+
 # 보증료율 설정 (전세대출 금융비용 부담 계산용)
-FEE_RATES = {
-    "HUG": {"loan": 0.0005, "deposit": 0.00128},
-    "HF": {"loan": 0.0004, "deposit": 0.0},
-    "SGI": {"loan": 0.00138, "deposit": 0.0}
-}
 FEE_RATES = {
     "HUG": {"loan": 0.0005, "deposit": 0.00128},
     "HF": {"loan": 0.0004, "deposit": 0.0},
@@ -210,5 +225,5 @@ else:
         st.info("아직 계산 이력이 없습니다.")
 
 
- 
-     
+  
+  
