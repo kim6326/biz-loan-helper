@@ -235,14 +235,5 @@ else:
             st.json(record['result'])
     else:
         st.info("아직 계산 이력이 없습니다.")
-else:
-    st.title("⏳ 내 계산 이력")
-    if st.session_state.history:
-        for record in st.session_state.history:
-            st.markdown(f"**[{record['time']}] {record['type']}**")
-            st.json(record['result'])
-    else:
-        st.info("아직 계산 이력이 없습니다.")
 
- 
-     
+  
