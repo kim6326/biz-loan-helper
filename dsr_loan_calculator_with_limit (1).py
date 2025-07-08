@@ -70,7 +70,7 @@ page = st.sidebar.selectbox(
 )
 
 if page == "DSR 담보대출 계산기":
-    ... # 생략: 기존 DSR 담보대출 계산기 코드 유지
+    ... (기존 코드 동일)
 
 elif page == "전세대출 계산기":
     st.title("📊 전세대출 한도 계산기 with DSR")
@@ -106,14 +106,19 @@ elif page == "전세대출 계산기":
         rp = st.selectbox(f"상환방식", ["원리금균등", "원금균등", "만기일시"], key=f"je_rp{i}")
         existing_loans.append({"amount": amt, "rate": rt, "years": pr, "repay_type": rp})
 
-    if st.button("계산", key="je_calc"):
+    if st.button("계산"):
         curr = sum(calculate_monthly_payment(l["amount"], l["rate"], l["years"], l["repay_type"]) for l in existing_loans)
         est = curr + calculate_monthly_payment(ho, effective_rate, yrs, repay_type)
-        st.markdown(f"현재 금융비용: {int(curr):,}원 / 예상 총 금융비용: {int(est):,}원")
+        limit = income / 12 * DSR_RATIO
+        approved = est <= limit
+
+        st.markdown(f"현재 월 상환액: {curr:,.0f}원 / 예상 총 상환액: {est:,.0f}원")
+        st.markdown(f"DSR 기준 한도: {limit:,.0f}원 / {'가능' if approved else '불가'}")
+
         st.session_state.history.append({
             'type':'전세','time':datetime.now().strftime('%Y-%m-%d %H:%M'),
             'inputs':{'age':age,'income':income,'mp':mp,'je':je,'ho':ho,'rate':rate,'yrs':yrs},
-            'result':{'current_dsr':curr,'estimated_dsr':est}
+            'result':{'current_dsr':curr,'estimated_dsr':est,'limit':limit,'approved':approved}
         })
 
 elif page == "내 계산 이력":
@@ -124,3 +129,5 @@ elif page == "내 계산 이력":
             st.json(h)
     else:
         st.info("아직 계산 이력이 없습니다.")
+
+  
