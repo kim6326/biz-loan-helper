@@ -188,28 +188,8 @@ elif page == "DSR 담보대출 계산기":
     cnt2 = st.number_input("기존 대출 건수", 0, 10, 0, key="dsr_cnt")
     for i in range(cnt2):
         amt2 = comma_number_input(f"대출 {i+1} 금액", f"dsr_amt{i}")
-        yr2 = st.number_input(f"기간(년)", 1, 40, 10, key=f"dsr_yr{i}")
-        rt2 = st.number_input(f"이율(%)", 0.0, 100.0, 4.0, key=f"dsr_rt{i}")
-        existing_loans.append({"amount": amt2, "rate": rt2, "years": yr2, "repay_type": "만기일시"})
+        yr2 = st.number_input(f"기간(년)", 1, 40, 10, key
 
-    st.subheader("신규 대출 조건")
-    loan_type = st.selectbox("대출 유형", ["고정형", "혼합형", "변동형", "주기형"], key="dsr_type")
-    fixed_years = 0
-    if loan_type == "혼합형":
-        fixed_years = st.number_input("↳ 고정금리 적용 기간 (년)", 0, 100, 5, key="dsr_fix")
-    total_years = st.number_input("↳ 총 대출 기간 (년)", 1, 100, 30, key="dsr_tot")
 
-    cycle_level = None
-    if loan_type == "주기형":
-        cycle_mon = st.number_input("↳ 금리 리셋 주기 (개월)", 1, 120, 12, key="dsr_cycle")
-        if cycle_mon >= 12:
-            cycle_level = "1단계"
-        elif cycle_mon >= 6:
-            cycle_level = "2단계"
-        else:
-            cycle_level = "3단계"
-        mult_prev = get_stress_multiplier(loan_type, fixed_years, total_years, cycle_level)
-        st.info(f"▶ 주기형 {cycle_mon}개월 → {cycle_level}, 배
-
-  
    
+  
