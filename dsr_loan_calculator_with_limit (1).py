@@ -20,7 +20,7 @@ DSR_RATIO = 0.4
 # ────────────────────────────────────────────────────────
 
 # 숫자 입력 및 콤마 출력
-" "def comma_number_input(label, key, value="0"):
+def comma_number_input(label, key, value="0"):
     user_input = st.text_input(label, value=value, key=key)
     digits = re.sub(r'[^0-9]', '', user_input)
     formatted = f"{int(digits):,}" if digits else ""
@@ -234,4 +234,3 @@ elif page == "내 이력":
     else:
         st.info("아직 계산 이력이 없습니다.")
 
- 
