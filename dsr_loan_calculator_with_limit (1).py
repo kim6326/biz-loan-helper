@@ -161,7 +161,7 @@ elif page == "전세대출 계산기":
     je = comma_number_input("전세 보증금 (원)", "je_input", "450000000")
     ho = comma_number_input("희망 대출 금액 (원)", "ho_input", "300000000")
     org = st.selectbox("보증기관", ["HUG", "HF", "SGI"])
-    rate = st.number_input("이자율 (%)", 0.0, 100.0, 3.5, 0.1)
+    rate = st.number_input("이자율 (%)", 0.0, 10.0, 3.5, 0.1)
     yrs = st.number_input("기간 (년)", 1, 30, 2)
     repay_type = "만기일시"
     use_stress = st.checkbox("스트레스 금리 적용 (금리 +0.6%)")
@@ -181,11 +181,21 @@ elif page == "전세대출 계산기":
     for i in range(cnt):
         amt = comma_number_input(f"대출 {i+1} 금액", f"je_amt{i}")
         pr = st.number_input(f"기간(년)", 1, 40, 10, key=f"je_pr{i}")
-        rt = st.number_input(f"이율(%)", 0.0, 100.0, 4.0, key=f"je_rt{i}")
+        rt = st.number_input(f"이율(%)", 0.0, 10.0, 4.0, key=f"je_rt{i}")
         rp = st.selectbox(f"상환방식", ["원리금균등", "원금균등", "만기일시"], key=f"je_rp{i}")
         existing_loans.append({"amount": amt, "rate": rt, "years": pr, "repay_type": rp})
 
     if st.button("계산"):
+        # SGI 금융비용부담비율 계산
+        estimated_rate = st.number_input("추정금리 (%)", 0.0, 10.0, 5.0, 0.1)
+        total_existing_amount = sum(l["amount"] for l in existing_loans)
+        financial_burden = ((total_existing_amount * (estimated_rate / 100)) + (ho * (rate / 100))) / income * 100
+        st.markdown(f"📊 금융비용부담비율: **{financial_burden:.2f}%** {'✅ 통과' if financial_burden <= 40 else '❌ 초과'}")
+        # 자동 역산: 최대 허용 월 상환액 기준으로 가능한 대출금 역산
+        max_monthly = income / 12 * DSR_RATIO - sum(calculate_monthly_payment(l["amount"], l["rate"], l["years"], l["repay_type"]) for l in existing_loans)
+        if effective_rate > 0 and yrs > 0:
+            max_loan_possible = max_monthly / (effective_rate / 100 / 12)
+            st.markdown(f"📈 역산 최대 대출 가능 금액(만기일시 기준): **{int(max_loan_possible):,}원**")
         curr = sum(calculate_monthly_payment(l["amount"], l["rate"], l["years"], l["repay_type"]) for l in existing_loans)
         est = curr + calculate_monthly_payment(ho, effective_rate, yrs, repay_type)
         limit = income / 12 * DSR_RATIO
@@ -208,5 +218,11 @@ elif page == "내 계산 이력":
             st.json(h)
     else:
         st.info("아직 계산 이력이 없습니다.")
+
+   
+     
+
+     
+   
 
   
