@@ -51,11 +51,9 @@ def calculate_dsr(existing_loans, annual_income):
     )
     return (total / annual_income * 100) if annual_income > 0 else 0
 
-# 전세대출 상품 추천 함수 (수정된 한도 로직)
+# 전세대출 상품 추천 함수
 def recommend_product(age, is_married, income, market_price, jeonse_price, hope_loan, org):
-    # 전세보증금과 시세의 80% 중 작은 값을 최대 한도로 설정
     max_possible = min(jeonse_price, market_price * 0.8)
-
     if age <= 34 and income <= 70000000:
         limit = min(max_possible, 200000000 if org == "HUG" else 100000000)
         prod = "청년 전세자금대출"
@@ -65,7 +63,6 @@ def recommend_product(age, is_married, income, market_price, jeonse_price, hope_
     else:
         limit = min(max_possible, 500000000)
         prod = "일반 전세자금대출"
-
     return prod, limit, (hope_loan <= limit)
 
 # 스트레스 배율 함수
@@ -93,10 +90,10 @@ page = st.sidebar.selectbox(
     ["전세대출 계산기", "DSR 담보대출 계산기", "내 이력"]
 )
 
-# 보증료율 설정 (전세대출 금융비용부담 계산용)
+# 보증료율 설정 (전세대출 금융비용 부담 계산용)
 FEE_RATES = {
-    "HUG": {"loan": 0.0005, "deposit": 0.00128},   # 보증료율 예시 (0.05%, 0.128%)
-    "HF":  {"loan": 0.0004, "deposit": 0.0},       # 기관별 실제 값으로 교체
+    "HUG": {"loan": 0.0005, "deposit": 0.00128},
+    "HF":  {"loan": 0.0004, "deposit": 0.0},
     "SGI": {"loan": 0.00138, "deposit": 0.0}
 }
 
@@ -134,9 +131,8 @@ if page == "전세대출 계산기":
         rp = st.selectbox(f"상환방식", ["원리금균등", "원금균등", "만기일시"], key=f"je_rp{i}")
         existing_loans.append({"amount": amt, "rate": rt, "years": pr, "repay_type": rp})
 
-    # ─── 전세대출 계산기: 계산 버튼 클릭 ───────────────────────────
+    # 계산 버튼 클릭 시 로직
     if st.button("계산"):
-        # 기존 DSR 계산
         curr = calculate_dsr(existing_loans, income)
         est = calculate_dsr(
             existing_loans + [{"amount": ho, "rate": effective_rate, "years": yrs, "repay_type": repay_type}],
@@ -145,26 +141,30 @@ if page == "전세대출 계산기":
         prod, lim, base_ok = recommend_product(age, married, income, mp, je, ho, org)
 
         # 금융비용부담율 계산
-        rates          = FEE_RATES[org]
+        rates = FEE_RATES[org]
         annual_interest = ho * effective_rate / 100
-        annual_fee      = ho * rates["loan"] + je * rates["deposit"]
-        annual_cost     = annual_interest + annual_fee
-        burden_pct      = annual_cost / income * 100
-        burden_limit    = 40.0
+        annual_fee = ho * rates["loan"] + je * rates["deposit"]
+        annual_cost = annual_interest + annual_fee
+        burden_pct = annual_cost / income * 100
+        burden_limit = 40.0
 
-        # 승인 여부 (한도 & 부담율 동시 체크)
-        ok = (ho <= lim) and (burden_pct <= burden_limit)
+        # 승인 여부: 한도 체크 + 금융비용부담율 체크
+        within_limit = (ho <= lim)
+        within_burden = (burden_pct <= burden_limit)
+        ok = within_limit and within_burden
+
+        # 디버깅용 로그
+        st.write(f"▶ 한도내 여부: {within_limit}, 부담율내 여부: {within_burden}")
 
         # 결과 출력
         st.markdown(f"현재 DSR: {curr:.2f}% / 예상 DSR: {est:.2f}%")
         st.markdown(f"금융비용부담율: {burden_pct:.2f}% (한도: {burden_limit:.0f}%)")
         st.markdown(f"추천상품: {prod} / 한도: {int(lim):,}원 / {'가능' if ok else '불가'}")
         st.session_state.history.append({
-            'type':'전세','time':datetime.now().strftime('%Y-%m-%d %H:%M'),
-            'inputs':{'age':age,'income':income,'mp':mp,'je':je,'ho':ho,'rate':rate,'yrs':yrs},
-            'result':{'current_dsr':curr,'estimated_dsr':est,'product':prod,'limit':lim,'approved':ok,'burden_pct':burden_pct}
+            'type': '전세', 'time': datetime.now().strftime('%Y-%m-%d %H:%M'),
+            'inputs': {'age': age, 'income': income, 'mp': mp, 'je': je, 'ho': ho, 'rate': rate, 'yrs': yrs},
+            'result': {'current_dsr': curr, 'estimated_dsr': est, 'product': prod, 'limit': lim, 'approved': ok, 'burden_pct': burden_pct}
         })
-    # ────────────────────────────────────────────────────────────────
 
 elif page == "DSR 담보대출 계산기":
     st.title("🏦 DSR 담보대출 계산기 (스트레스 감면 포함)")
@@ -188,15 +188,15 @@ elif page == "DSR 담보대출 계산기":
     cnt2 = st.number_input("기존 대출 건수", 0, 10, 0, key="dsr_cnt")
     for i in range(cnt2):
         amt2 = comma_number_input(f"대출 {i+1} 금액", f"dsr_amt{i}")
-        yr2 = st.number_input(f"기간(년)", 1, 40, 10, key="dsr_yr{i}")
+        yr2 = st.number_input(f"기간(년)", 1, 40, 10, key=f"dsr_yr{i}")
         rt2 = st.number_input(f"이율(%)", 0.0, 100.0, 4.0, key=f"dsr_rt{i}")
         existing_loans.append({"amount": amt2, "rate": rt2, "years": yr2, "repay_type": "만기일시"})
 
     st.subheader("신규 대출 조건")
-    loan_type = st.selectbox("대출 유형", ["고정형","혼합형","변동형","주기형"], key="dsr_type")
+    loan_type = st.selectbox("대출 유형", ["고정형", "혼합형", "변동형", "주기형"], key="dsr_type")
     fixed_years = 0
     if loan_type == "혼합형":
-        fixed_years = st.number_input("↳ 고정금리 적용기간 (년)", 0, 100, 5, key="dsr_fix")
+        fixed_years = st.number_input("↳ 고정금리 적용 기간 (년)", 0, 100, 5, key="dsr_fix")
     total_years = st.number_input("↳ 총 대출 기간 (년)", 1, 100, 30, key="dsr_tot")
 
     cycle_level = None
@@ -209,43 +209,7 @@ elif page == "DSR 담보대출 계산기":
         else:
             cycle_level = "3단계"
         mult_prev = get_stress_multiplier(loan_type, fixed_years, total_years, cycle_level)
-        st.info(f"▶ 주기형 {cycle_mon}개월 → {cycle_level}, 배율 {mult_prev:.1f}배")
+        st.info(f"▶ 주기형 {cycle_mon}개월 → {cycle_level}, 배
 
-    new_rate = st.number_input("신규 금리 (%)", 0.0, 100.0, 4.7, 0.01, key="dsr_newrate")
-    new_amount = comma_number_input("신규 대출 금액 (원)", "dsr_newamt", "300000000")
-
-    if st.button("계산하기", key="dsr_calc"):
-        exist_mon2 = sum(
-            calculate_monthly_payment(l["amount"], l["rate"], l["years"], l["repay_type"]) for l in existing_loans
-        )
-        dsr_lim = annual_income / 12 * DSR_RATIO
-        avail = dsr_lim - exist_mon2
-
-        mult2 = get_stress_multiplier(loan_type, fixed_years, total_years, cycle_level)
-        stress_rate2 = new_rate * mult2
-        discount2 = 1.5 if region in ["서울", "경기", "인천"] else 0.75
-        adj_rate2 = stress_rate2 - discount2
-
-        new_mon2 = calculate_monthly_payment(new_amount, adj_rate2, total_years, "만기일시")
-        cap2 = min(price * ltv_ratio, 600_000_000 if first_home else price * ltv_ratio)
-
-        st.write(f"기존 월 상환액: {exist_mon2:,.0f}원")
-        st.write(f"DSR 한도: {dsr_lim:,.0f}원")
-        st.write(f"여유 상환액: {avail:,.0f}원")
-        st.write(f"스트레스 금리 (전): {stress_rate2:.2f}% → (감면 후) {adj_rate2:.2f}% (-{discount2:.2f}%p)")
-        st.write(f"신규 월 상환액: {new_mon2:,.0f}원")
-        st.write(f"LTV 한도: {ltv_ratio*100:.1f}% → {cap2:,.0f}원")
-
-        if new_amount <= cap2 and new_mon2 <= avail:
-            st.success("✅ 신규 대출 가능")
-        else:
-            st.error("❌ 신규 대출 불가")
-
-elif page == "내 이력":
-    st.title("⏳ 내 계산 이력")
-    if st.session_state.history:
-        for record in st.session_state.history:
-            st.markdown(f"**[{record['time']}] {record['type']} 계산**")
-            st.json(record)
-    else:
-        st.info("아직 계산 이력이 없습니다.")
+  
+   
