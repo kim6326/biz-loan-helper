@@ -145,8 +145,8 @@ if page == "전세대출 계산기":
 # DSR 담보대출 계산기
 elif page == "DSR 담보대출 계산기":
     st.title("🏦 DSR 담보대출 계산기")
-    income_man = comma_number_input("연소득 (만원)", "di", "6000")
-    income = income_man * 10000
+    # 연소득 입력 (원 단위)
+    income = comma_number_input("연소득 (원)", "di", "60000000")
     region = st.selectbox("지역", list(LTV_MAP.keys()))
     first_home = st.checkbox("생애최초 구매 여부")
     custom_ltv = st.checkbox("직접 LTV 입력")
@@ -155,7 +155,7 @@ elif page == "DSR 담보대출 계산기":
     else:
         ltv = 0.7 if first_home else LTV_MAP[region]
 
-    price = comma_number_input("시세 (원)", "dp", "500000000")
+        price = comma_number_input("시세 (원)", "dp", "500000000") (원)", "dp", "500000000")
     st.markdown(f"▶ 시세: {price:,}원 | LTV: {ltv*100:.1f}%")
 
     st.subheader("기존 대출 내역")
@@ -226,11 +226,5 @@ else:
     else:
         st.info("아직 계산 이력이 없습니다.")
 
-  
-  
-
    
-   
-
-  
-       
+      
