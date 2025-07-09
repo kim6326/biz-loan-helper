@@ -113,7 +113,7 @@ if page == "DSR 담보대출 계산기":
     new_amt = comma_number_input("신규 대출 금액(원)", "na", "300000000")
 
     if st.button("계산하기"):
-        calc_time = calc_time
+        calc_time = datetime.now().strftime('%Y-%m-%d %H:%M')
         exist_mon = sum(
             calculate_monthly_payment(l['amount'], l['rate'], l['years'], l['repay_type']) for l in existing_loans
         )
@@ -172,7 +172,6 @@ if page == "DSR 담보대출 계산기":
                 'approved': approved
             }
         })
-        else:
             st.error("❌ 신규 대출 불가능")
 
 elif page == "전세대출 계산기":
@@ -248,7 +247,3 @@ elif page == "내 계산 이력":
             st.json(h)
     else:
         st.info("아직 계산 이력이 없습니다.")
-
-
-     
-  
