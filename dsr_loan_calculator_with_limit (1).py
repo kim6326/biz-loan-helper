@@ -113,6 +113,7 @@ if page == "DSR 담보대출 계산기":
     new_amt = comma_number_input("신규 대출 금액(원)", "na", "300000000")
 
     if st.button("계산하기"):
+        calc_time = calc_time
         exist_mon = sum(
             calculate_monthly_payment(l['amount'], l['rate'], l['years'], l['repay_type']) for l in existing_loans
         )
@@ -151,6 +152,29 @@ if page == "DSR 담보대출 계산기":
         else:
             st.error("❌ 신규 대출 불가능")
 
+        st.session_state.history.append({
+            'type': '담보',
+            'time': calc_time,
+            'inputs': {
+                'income': annual_income,
+                'region': region,
+                'price': price,
+                'ltv_ratio': ltv_ratio,
+                'new_amt': new_amt,
+                'new_rate': new_rate,
+                'years': total_years
+            },
+            'result': {
+                'existing_payment': exist_mon,
+                'new_payment': new_mon,
+                'limit': dsr_limit,
+                'max_loan': max_loan,
+                'approved': approved
+            }
+        })
+        else:
+            st.error("❌ 신규 대출 불가능")
+
 elif page == "전세대출 계산기":
     st.title("\U0001f4ca 전세대출 한도 계산기 with DSR")
     age = st.number_input("나이", 19, 70, 32)
@@ -186,6 +210,7 @@ elif page == "전세대출 계산기":
         existing_loans.append({"amount": amt, "rate": rt, "years": pr, "repay_type": rp})
 
     if st.button("계산"):
+        calc_time = datetime.now().strftime('%Y-%m-%d %H:%M')
         # SGI 금융비용부담비율 계산
         estimated_rate = st.number_input("추정금리 (%)", 0.0, 10.0, 5.0, 0.1)
         total_existing_amount = sum(l["amount"] for l in existing_loans)
@@ -210,7 +235,7 @@ elif page == "전세대출 계산기":
         st.markdown(f"DSR 기준 한도: {limit:,.0f}원 / {'가능' if approved else '불가'}")
 
         st.session_state.history.append({
-            'type':'전세','time':datetime.now().strftime('%Y-%m-%d %H:%M'),
+            'type': '전세','time':datetime.now().strftime('%Y-%m-%d %H:%M'),
             'inputs':{'age':age,'income':income,'mp':mp,'je':je,'ho':ho,'rate':rate,'yrs':yrs},
             'result':{'current_dsr':curr,'estimated_dsr':est,'limit':limit,'approved':approved}
         })
@@ -224,4 +249,6 @@ elif page == "내 계산 이력":
     else:
         st.info("아직 계산 이력이 없습니다.")
 
-    
+
+     
+  
