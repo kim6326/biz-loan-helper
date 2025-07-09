@@ -172,7 +172,6 @@ if page == "DSR 담보대출 계산기":
                 'approved': approved
             }
         })
-            st.error("❌ 신규 대출 불가능")
 
 elif page == "전세대출 계산기":
     st.title("\U0001f4ca 전세대출 한도 계산기 with DSR")
